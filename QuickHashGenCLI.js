@@ -67,12 +67,15 @@ let maxSize = minSize * 8;
 let qh = new core.QuickHashGen(strings, minSize, maxSize, opts.requireZeroTermination, opts.allowMultiplications, opts.allowLength);
 let best = null;
 
-while (qh.getTestedCount() < opts.tests && best === null) {
-    let complexity = core.globalPRNG.nextInt(32) + 1;
+while (qh.getTestedCount() < opts.tests) {
+    let complexity = core.globalPRNG.nextInt(best === null ? 32 : best.complexity) + 1;
     let remaining = opts.tests - qh.getTestedCount();
     let iters = Math.max(1, Math.min(remaining, Math.floor(200 / strings.length)));
     let found = qh.search(complexity, iters);
-    if (found) best = found;
+    if (found && (best === null || found.complexity < best.complexity || (found.complexity === best.complexity && found.table.length < best.table.length))) {
+        best = found;
+        if (best.complexity === 1) break;
+    }
 }
 
 if (!best) {
