@@ -47,6 +47,7 @@ if (elements.forceEval) elements.forceEval.addEventListener('change', function()
 var currentTemplate = ZERO_TERMINATED_TEMPLATE;
 var theHashMaker = null, lastInputText = elements.editor.value, solutionsCounter = 0, strings = [], minSize, maxSize, best = null;
 var ENGINE_USE_EVAL = false;
+var EVAL_ALLOWED = false;
 // ===== Controls =====
 function toggleRun() {
 if (isRunning) { isRunning = false; elements.startPause.textContent = "Start"; return; }
@@ -85,6 +86,16 @@ if (ch === '[') depth++;
 else if (ch === ']') { depth--; if (depth === 0) return i; }
 }
 return -1;
+}
+
+function detectEvalAllowed() {
+try {
+eval('1');
+new Function('return 1;');
+return true;
+} catch (_) {
+return false;
+}
 }
 // ---- Eval-based verification (expression generated for C) ----
 function _baseStatusText() {
