@@ -1,0 +1,184 @@
+<html>
+	<head>
+		<script type="text/javascript" src="QuickHashMaker.js"></script>
+	</head>
+	<body style="background:black; color:white; text-align:left">
+		<h1 style="text-align:center">QuickHashMaker</h1>
+		<textarea id="input" rows="15" cols="80" autofocus>enter
+one
+string
+per
+line
+"or", "many", "on a line", "like this!\r\n"</textarea>
+		<textarea id="template" rows="15" cols="80" onchange="updateOutput()" onkeyup="updateOutput()" onpaste="updateOutput()">
+        </textarea>
+		<br>
+		<input id="allowMultiplications" type="checkbox" checked="true" onchange="resetSearch()">Allow Multiplications
+		<input id="allowLength" type="checkbox" checked="true" onchange="resetSearch()">Allow n
+		<input id="requireZeroTermination" type="checkbox" checked="true" onchange="changedZeroTermination()">Expect Zero Termination
+		<br>
+		<div>
+			Tested <span id="testedCount">0</span> expressions.
+			Found <span id="solutionsCount">0</span> solutions.
+			Complexity: <span id="complexity">?</span>, table size: <span id="tableSize">?</span>.
+		</div>
+		<hr>
+		<pre id="output">
+		</pre>
+		<hr>
+		<pre id="hashes">
+		</pre>
+		
+		<script>
+			"use strict";
+
+			// TODO
+			// switch output?
+			// cuckoo hashing with two strcmp for bigger string lists
+			// bloom hash too?
+			// unicode support
+			// cpu throttle slider
+			// max table size choice
+			// auto-stop search when exhausted possible tests (as determined after n secs)
+			// use unsigned chars and unsigned arithmitic (guaranteed bit-representation and wrapping) only
+			// match start of string (which is what I begun on with "allowLength")
+
+		    var ZERO_TERMINATED_TEMPLATE = '/* Built with http://nuedge.net/StringHashMaker */\n' +
+                    'static int <<findSomething>>(int n /* string length */, const char* s /* string (zero terminated) */) {\n' +
+                    '	static const char* STRINGS[${stringCount}] = {\n' +
+                    '		${stringList}\n' +
+                    '	};\n' +
+                    '	static const int HASH_TABLE[${tableSize}] = {\n' +
+                    '		${tableData}\n' +
+                    '	};\n' +
+                    '	assert(s[n] == \'\\0\');\n' +
+                    '	if (n < ${minLength} || n > ${maxLength}) return -1;\n' +
+                    '	int stringIndex = HASH_TABLE[${hashExpression}];\n' +
+                    '	return (stringIndex >= 0 && strcmp(s, STRINGS[stringIndex]) == 0) ? stringIndex : -1;\n' +
+                    '}';
+
+            var NON_ZERO_TERMINATED_TEMPLATE = '/* Built with http://nuedge.net/StringHashMaker */\n' +
+                    'static int <<findSomething>>(int n /* string length */, const char* s /* string (zero termination not required) */) {\n' +
+                    '	static const char* STRINGS[${stringCount}] = {\n' +
+                    '		${stringList}\n' +
+                    '	};\n' +
+                    '	static const int HASH_TABLE[${tableSize}] = {\n' +
+                    '		${tableData}\n' +
+                    '	};\n' +
+                    '	if (n < ${minLength} || n > ${maxLength}) return -1;\n' +
+                    '	int stringIndex = HASH_TABLE[${hashExpression}];\n' +
+                    '	return (stringIndex >= 0 && strncmp(s, STRINGS[stringIndex], n) == 0 && STRINGS[stringIndex][n] == 0) ? stringIndex : -1;\n' +
+                    '}';
+
+			var HTML_ELEMENTS = [
+				"input", "template", "output", "solutionsCount", "complexity", "tableSize", "testedCount",
+				"requireZeroTermination", "allowMultiplications", "allowLength", "hashes"
+			];
+			var elements = { };
+			for (var i = 0; i < HTML_ELEMENTS.length; ++i) {
+				elements[HTML_ELEMENTS[i]] = document.getElementById(HTML_ELEMENTS[i]);
+			};
+
+            elements.template.value = ZERO_TERMINATED_TEMPLATE;
+
+			var MAX_COMPLEXITY = 32;
+			var MAX_SIZE_MULTIPLIER = 8;
+
+			var theHashMaker = null;
+			var lastInputText = elements.input.value;
+
+			var solutionsCounter;
+			var strings;
+			var minSize;
+			var maxSize;
+			var best;
+
+			function resetSearch() {
+				theHashMaker = null;
+				solutionsCounter = 0;
+				lastInputText = elements.input.value;
+				strings = parseQuickHashMakerInput(lastInputText);
+				best = null;
+				
+				if (strings.length > 0) {
+					for (minSize = 1; strings.length > minSize; minSize <<= 1) ;
+					maxSize = minSize * MAX_SIZE_MULTIPLIER;
+
+					theHashMaker = new QuickHashMaker(strings, minSize, maxSize, elements.requireZeroTermination.checked,
+							elements.allowMultiplications.checked, elements.allowLength.checked);
+					elements.output.innerHTML = "";
+					elements.hashes.innerHTML = "";
+					elements.testedCount.innerHTML = "0";
+					elements.solutionsCount.innerHTML = "0";
+					elements.complexity.innerHTML = "?";
+					elements.tableSize.innerHTML = "?";
+				}
+			}
+
+			function changedZeroTermination() {
+			    if (elements.requireZeroTermination.checked) {
+			        elements.template.value = ZERO_TERMINATED_TEMPLATE;
+			    } else {
+			        elements.template.value = NON_ZERO_TERMINATED_TEMPLATE;
+                }
+			    resetSearch();
+			}
+
+			function updateOutput() {
+				if (best !== null) {
+					elements.output.innerHTML = theHashMaker.generateCOutput(elements.template.value, best)
+							.replace(/&/g, '&amp;')
+							.replace(/"/g, '&quot;')
+							.replace(/'/g, '&#39;')
+							.replace(/</g, '&lt;')
+							.replace(/>/g, '&gt;');
+					var s = '';
+					for (var i = 0; i < strings.length; ++i) {
+						s += escapeCString(strings[i]) + ' : ' + (best.hashes[i] & (best.table.length - 1)) + ' (' + best.hashes[i] + ')\n';
+					}
+					elements.hashes.innerHTML = s;
+				} else {
+					elements.output.innerHTML = "";
+					elements.hashes.innerHMTL = "";
+				}
+			}
+
+			function intervalFunction() {
+				try {
+					if (elements.input.value !== lastInputText) {
+						resetSearch();
+					}
+
+					if (theHashMaker !== null) {
+						var timeOut = new Date().getTime() + 100;
+						while (new Date().getTime() - timeOut < 0) {
+							var complexity = globalPRNG.nextInt((best === null ? MAX_COMPLEXITY : best.complexity)) + 1;
+							var found = theHashMaker.search(complexity, minSize, maxSize, Math.max(200 / strings.length, 1));
+							if (found !== null) {
+								if (best === null ||
+										found.complexity < best.complexity ||
+										(found.complexity === best.complexity && found.table.length < best.table.length)) {
+									best = found;
+									updateOutput();
+								}
+								++solutionsCounter;
+							}
+						}
+						elements.testedCount.innerHTML = theHashMaker.getTestedCount();
+						elements.solutionsCount.innerHTML = solutionsCounter;
+						elements.complexity.innerHTML = (best === null ? "?" : best.complexity);
+						elements.tableSize.innerHTML = (best === null ? "?" : best.table.length);
+					}
+				}
+				catch (err) {
+					elements.output.innerHTML = err.toString();
+					theHashMaker = null;
+				}
+			}
+
+			window.setInterval(intervalFunction, 200);
+
+		</script>
+		
+	</body>
+</html>
