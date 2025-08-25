@@ -1,9 +1,9 @@
 <html>
 	<head>
-		<script type="text/javascript" src="QuickHashMaker.js"></script>
+		<script type="text/javascript" src="QuickHashGen.js"></script>
 	</head>
 	<body style="background:black; color:white; text-align:left">
-		<h1 style="text-align:center">QuickHashMaker</h1>
+		<h1 style="text-align:center">QuickHashGen</h1>
 		<textarea id="input" rows="15" cols="80" autofocus>enter
 one
 string
@@ -97,14 +97,14 @@ line
 				theHashMaker = null;
 				solutionsCounter = 0;
 				lastInputText = elements.input.value;
-				strings = parseQuickHashMakerInput(lastInputText);
+				strings = parseQuickHashGenInput(lastInputText);
 				best = null;
 				
 				if (strings.length > 0) {
 					for (minSize = 1; strings.length > minSize; minSize <<= 1) ;
 					maxSize = minSize * MAX_SIZE_MULTIPLIER;
 
-					theHashMaker = new QuickHashMaker(strings, minSize, maxSize, elements.requireZeroTermination.checked,
+					theHashMaker = new QuickHashGen(strings, minSize, maxSize, elements.requireZeroTermination.checked,
 							elements.allowMultiplications.checked, elements.allowLength.checked);
 					elements.output.innerHTML = "";
 					elements.hashes.innerHTML = "";

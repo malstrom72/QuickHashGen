@@ -1,8 +1,8 @@
-var quickHashMaker = require('./QuickHashMaker');
+var quickHashGen = require('./QuickHashGenCore');
 
-var QuickHashMaker = quickHashMaker.QuickHashMaker;
-var globalPRNG = quickHashMaker.globalPRNG;
-var XorshiftPRNG2x32 = quickHashMaker.XorshiftPRNG2x32;
+var QuickHashGen = quickHashGen.QuickHashGen;
+var globalPRNG = quickHashGen.globalPRNG;
+var XorshiftPRNG2x32 = quickHashGen.XorshiftPRNG2x32;
 
 var MAX_COMPLEXITY = 32;
 var MAX_SIZE_MULTIPLIER = 8;
@@ -66,12 +66,12 @@ var minSize;
 for (minSize = 1; strings.length > minSize; minSize <<= 1) ;
 var maxSize = minSize * MAX_SIZE_MULTIPLIER;
 
-var theHashMaker = new QuickHashMaker(strings, minSize, maxSize, true, true);
+var theHashMaker = new QuickHashGen(strings, minSize, maxSize, true, true, true);
 
 var found = null;
 while (found === null) {
-	var complexity = globalPRNG.nextInt(MAX_COMPLEXITY) + 1;
-	found = theHashMaker.search(complexity, minSize, maxSize, 100000);
+        var complexity = globalPRNG.nextInt(MAX_COMPLEXITY) + 1;
+        found = theHashMaker.search(complexity, 100000);
 }
 
 if (found !== null) {

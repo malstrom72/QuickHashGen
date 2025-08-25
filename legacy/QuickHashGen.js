@@ -213,7 +213,7 @@ if (!("imul" in Math)) {
 	};
 }
 
-function QuickHashMaker(strings, minTableSize, maxTableSize, zeroTerminated, allowMultiplication, allowLength) {
+function QuickHashGen(strings, minTableSize, maxTableSize, zeroTerminated, allowMultiplication, allowLength) {
 	var stringSet = { };
 
 	var maxLength = 0;
@@ -397,7 +397,7 @@ function QuickHashMaker(strings, minTableSize, maxTableSize, zeroTerminated, all
 
 }
 
-function parseQuickHashMakerInput(text) {
+function parseQuickHashGenInput(text) {
 	var lines = text.split("\n");
 	var strings = [ ];
 	for (var i = 0; i < lines.length; ++i) {
@@ -432,7 +432,7 @@ if (typeof module !== "undefined") {
 		escapeCString: escapeCString,
 		stringListToC: stringListToC,
 		numberListToC: numberListToC,
-		parseQuickHashMakerInput: parseQuickHashMakerInput,
-		QuickHashMaker: QuickHashMaker
+		parseQuickHashGenInput: parseQuickHashGenInput,
+		QuickHashGen: QuickHashGen
 	};
 }
