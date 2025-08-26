@@ -223,7 +223,7 @@ try { strings = parseStringsFromEditor(lastInputText); } catch (_) { strings = [
 if (strings.length > 0) {
 for (minSize = 1; strings.length > minSize; minSize <<= 1) ;
 maxSize = minSize * 8;
-theHashMaker = new QuickHashGen(strings, minSize, maxSize, elements.requireZeroTermination.checked, elements.allowMultiplications.checked, elements.allowLength.checked);
+        theHashMaker = new QuickHashGen(strings, minSize, maxSize, elements.requireZeroTermination.checked, elements.allowMultiplications.checked, elements.allowLength.checked, ENGINE_USE_EVAL);
 elements.hashes.innerHTML = "";
 elements.testedCount.innerHTML = "0";
 elements.solutionsCount.innerHTML = "0";
