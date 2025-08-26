@@ -234,11 +234,10 @@ function QuickHashGen(strings, minTableSize, maxTableSize, zeroTerminated, allow
 	for (var i = 0; i < strings.length; ++i) {
 		var n = strings[i].length;
 		var a = new Array(maxLength + 1);
-		for (var j = 0; j <= maxLength; ++j) {
-			var c = (j < n ? strings[i].charCodeAt(j) : 0);
-			if (c >= 128) c -= 256;
-			a[j] = c;
-		}
+                for (var j = 0; j <= maxLength; ++j) {
+                        var c = (j < n ? strings[i].charCodeAt(j) : 0);
+                        a[j] = c;
+                }
 		stringChars[i] = a;
 	}
 
@@ -253,15 +252,34 @@ function QuickHashGen(strings, minTableSize, maxTableSize, zeroTerminated, allow
 		//  - .fn : CSP-safe evaluator
 		// RNG decisions are identical regardless of cpp/js to keep PRNG in sync.
 		function leaf_n() { return {prec:4, c:'n', js:'n', fn:function(n,w){return n|0;}}; }
-		function leaf_const() { var k=(rnd.nextInt32() & constantMask)|0; var s=String(k); return {prec:4, c:s, js:s, fn:function(){return k;}}; }
-		function leaf_w_in() { var idx=rnd.nextInt(safeLength)|0; return {prec:4, c:'s['+idx+']', js:'w['+idx+']', fn:function(n,w){ return w[idx]|0; }}; }
-		function leaf_w_out() { var span=(maxLength - safeLength)|0; var i=(rnd.nextInt(Math.max(1,span)) + safeLength)|0; return {prec:4, c:'(' + i + ' < n ? s['+i+'] : 0)', js:'w['+i+']', fn:function(n,w){ return w[i]|0; }}; }
+                function leaf_const() { var k=(rnd.nextInt32() & constantMask)|0; var s=String(k); return {prec:4, c:s+'u', js:s, fn:function(){return k;}}; }
+                function leaf_w_in() { var idx=rnd.nextInt(safeLength)|0; return {prec:4, c:'p['+idx+']', js:'w['+idx+']', fn:function(n,w){ return w[idx]|0; }}; }
+                function leaf_w_out() { var span=(maxLength - safeLength)|0; var i=(rnd.nextInt(Math.max(1,span)) + safeLength)|0; return {prec:4, c:'(' + i + ' < n ? p['+i+'] : 0)', js:'w['+i+']', fn:function(n,w){ return w[i]|0; }}; }
 		function needsPar(a,prec){ return (!compact || a.prec < prec); }
-		function wrapC(a,prec){ return needsPar(a,prec) ? '('+a.c+')' : a.c; }
-		function wrapJ(a,prec){ return needsPar(a,prec) ? '('+a.js+')' : a.js; }
-		function bin(a,b,op,prec,evalFn){ return {prec:prec, c: wrapC(a,prec)+' '+op+' '+wrapC(b,prec), js: wrapJ(a,prec)+' '+op+' '+wrapJ(b,prec), fn:function(n,w){ return evalFn(a.fn(n,w), b.fn(n,w)); }}; }
-		function sh(a,dir,shamt){ var c=a.c+' '+dir+' '+shamt; var j=a.js+' '+dir+' '+shamt; return {prec:1, c:c, js:j, fn:function(n,w){ var v=a.fn(n,w)|0; return (dir==='<<' ? (v<<shamt) : (v>>shamt))|0; }}; }
-		function mul(a,b){ var c = wrapC(a,3)+' * '+wrapC(b,3); var j = 'Math.imul('+a.js+', '+b.js+')'; return {prec:3, c:c, js:j, fn:function(n,w){ return Math.imul(a.fn(n,w), b.fn(n,w)); }}; }
+               function wrapC(a,prec){ return needsPar(a,prec) ? '('+a.c+')' : a.c; }
+               function wrapJ(a,prec){ return needsPar(a,prec) ? '('+a.js+')' : a.js; }
+               function bin(a,b,op,prec,evalFn){
+                       var cLeft = wrapC(a,prec);
+                       var needRightPar = (op === '-' && b.prec === prec);
+                       var cRight = needRightPar ? '('+b.c+')' : wrapC(b,prec);
+                       var jLeft = wrapJ(a,prec);
+                       var jRight = needRightPar ? '('+b.js+')' : wrapJ(b,prec);
+                       var c = cLeft+' '+op+' '+cRight;
+                       var j = jLeft+' '+op+' '+jRight;
+                       return {prec:prec, c:c, js:j, fn:function(n,w){ return evalFn(a.fn(n,w), b.fn(n,w)); }};
+               }
+               function sh(a,dir,shamt){
+                       var j = wrapJ(a,1)+' '+dir+' '+shamt;
+                       var c = (dir==='<<')
+                               ? '(0u + '+wrapC(a,1)+') << '+shamt
+                               : wrapC(a,1)+' >> '+shamt;
+                       return {prec:1, c:c, js:j, fn:function(n,w){ var v=a.fn(n,w)|0; return (dir==='<<' ? (v<<shamt) : (v>>shamt))|0; }};
+               }
+               function mul(a,b){
+                       var c = wrapC(a,3)+' * '+wrapC(b,3);
+                       var j = 'Math.imul('+a.js+', '+b.js+')';
+                       return {prec:3, c:c, js:j, fn:function(n,w){ return Math.imul(a.fn(n,w), b.fn(n,w)); }};
+               }
 		var OPS = [
 			[ 4, 1, 1, function(){ return leaf_n(); } ],
 			[ 4, 1, 1, function(){ return leaf_const(); } ],
@@ -372,7 +390,7 @@ function QuickHashGen(strings, minTableSize, maxTableSize, zeroTerminated, allow
 
         this.generateCExpression = function(foundSolution) {
                 var r = buildExpression(foundSolution);
-                return '(' + r.exprObj.c + ') & ' + r.mask;
+                return '(' + r.exprObj.c + ') & ' + r.mask + 'u';
         };
 
         this.generateJSExpression = function(foundSolution) {

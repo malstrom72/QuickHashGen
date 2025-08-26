@@ -83,8 +83,9 @@ static int lookup(int n /* string length */, const char* s /* string (zero termi
                 -1, -1, -1, -1, -1, 15, 13, 0, -1, -1, -1, 2, 8, 7, -1, -1,
                 9, -1, 12, 4, 10, 5, 6, -1, 14, 1, -1, -1, 3, -1, -1, 11
         };
+        const unsigned char* p = (const unsigned char*) s;
         if (n < 3 || n > 7) return -1;
-        int stringIndex = HASH_TABLE[(n + s[0]) & 31];
+        int stringIndex = HASH_TABLE[(n + p[0]) & 31];
         return (stringIndex >= 0 && strcmp(s, STRINGS[stringIndex]) == 0) ? stringIndex : -1;
 }
 ```

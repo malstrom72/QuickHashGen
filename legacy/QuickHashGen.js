@@ -251,9 +251,9 @@ function QuickHashGen(strings, minTableSize, maxTableSize, zeroTerminated, allow
 			OPS = [
 				[ 4, 1, 1, function() { return 'n'; } ],
 				[ 4, 1, 1, function() { return (rnd.nextInt32() & constantMask); } ],
-				[ 4, 1, 1, function() { return 's[' + rnd.nextInt(safeLength) + ']'; } ],
-				[ 4, 2, 2, function() { var i = (rnd.nextInt(maxLength - safeLength) + safeLength); return '(' + i + ' < n ? s[' + i + '] : 0)'; } ],
-				[ 1, 2, Infinity, function(c) { return rndExpr(c - 1, 1) + ' << ' + (rnd.nextInt(31) + 1); } ],
+                                [ 4, 1, 1, function() { return 'p[' + rnd.nextInt(safeLength) + ']'; } ],
+                                [ 4, 2, 2, function() { var i = (rnd.nextInt(maxLength - safeLength) + safeLength); return '(' + i + ' < n ? p[' + i + '] : 0)'; } ],
+                                [ 1, 2, Infinity, function(c) { return '0u + ' + rndExpr(c - 1, 1) + ' << ' + (rnd.nextInt(31) + 1); } ],
 				[ 1, 2, Infinity, function(c) { return rndExpr(c - 1, 1) + ' >> ' + (rnd.nextInt(31) + 1); } ],
 				[ 2, 2, Infinity, function(c) { var b = rnd.nextInt(c - 1) + 1; return rndExpr(b, 2) + ' + ' + rndExpr(c - b, 2); } ],
 				[ 2, 2, Infinity, function(c) { var b = rnd.nextInt(c - 1) + 1; return rndExpr(b, 2) + ' - ' + rndExpr(c - b, 3); } ], // that's right, right-hand side of - must have one higher prec to avoid x - (y - z) becoming x - y - z
@@ -267,7 +267,7 @@ function QuickHashGen(strings, minTableSize, maxTableSize, zeroTerminated, allow
 				[ 4, 1, 1, function() { return (rnd.nextInt32() & constantMask); } ],
 				[ 4, 1, 1, function() { return 'w[' + rnd.nextInt(safeLength) + ']'; } ],
 				[ 4, 2, 2, function() { return 'w[' + (rnd.nextInt(maxLength - safeLength) + safeLength) + ']'; } ],
-				[ 1, 2, Infinity, function(c) { return rndExpr(c - 1, 1) + ' << ' + (rnd.nextInt(31) + 1); } ],
+                                [ 1, 2, Infinity, function(c) { return '0 + ' + rndExpr(c - 1, 1) + ' << ' + (rnd.nextInt(31) + 1); } ],
 				[ 1, 2, Infinity, function(c) { return rndExpr(c - 1, 1) + ' >> ' + (rnd.nextInt(31) + 1); } ],
 				[ 2, 2, Infinity, function(c) { var b = rnd.nextInt(c - 1) + 1; return rndExpr(b, 2) + ' + ' + rndExpr(c - b, 2); } ],
 				[ 2, 2, Infinity, function(c) { var b = rnd.nextInt(c - 1) + 1; return rndExpr(b, 2) + ' - ' + rndExpr(c - b, 3); } ], // that's right, right-hand side of - must have one higher prec to avoid x - (y - z) becoming x - y - z
