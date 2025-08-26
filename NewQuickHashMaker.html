@@ -165,16 +165,20 @@ line
 		this.nextInt = function(max){ next(); return (py >>> 0) % max; };
 		this.clone = function(){ return new XorshiftPRNG2x32(px, py); };
 	}
-	var globalPRNG = new XorshiftPRNG2x32();
-	if (!("imul" in Math)) { Math.imul = function(a,b){ var ah=(a>>>16)&0xffff, al=a&0xffff, bh=(b>>>16)&0xffff, bl=b&0xffff; return ((al*bl)+(((ah*bl+al*bh)<<16)>>>0)|0); }; }
+        if (!("imul" in Math)) { Math.imul = function(a,b){ var ah=(a>>>16)&0xffff, al=a&0xffff, bh=(b>>>16)&0xffff, bl=b&0xffff; return ((al*bl)+(((ah*bl+al*bh)<<16)>>>0)|0); }; }
 
 	// ===== Eval detection =====
 	var EVAL_ALLOWED = false;
 	function detectEvalAllowed(){ try{ var f=eval("(function(n,w){return (n|0)+(w[0]|0);})"); return f(1,[2])===3; }catch(_){ return false; } }
 
 	// ===== Core generator (no eval; CSP-safe) =====
-	function QuickHashMaker(strings, minTableSize, maxTableSize, zeroTerminated, allowMultiplication, allowLength) {
-		var stringSet = { }, maxLength = 0, minLength = 0x7fffffff;
+        function QuickHashMaker(strings, minTableSize, maxTableSize, zeroTerminated, allowMultiplication, allowLength, seed0, seed1) {
+                var stringSet = { }, maxLength = 0, minLength = 0x7fffffff;
+
+                if (typeof seed0 === "undefined") { seed0 = (Math.random()*0x100000000)>>>0; seed1 = (Math.random()*0x100000000)>>>0; }
+                else if (typeof seed1 === "undefined") { seed1 = 362436069; }
+                var prng = new XorshiftPRNG2x32(seed0, seed1);
+                this.randomInt = function(max){ return prng.nextInt(max); };
 		for (var i = 0; i < strings.length; ++i) {
 			var s = strings[i];
 			if (s in stringSet) throw new Error("Duplicate string: " + escapeCString(s));
@@ -240,9 +244,10 @@ line
 			if (DEBUG) { assert(complexity > 0, "complexity>0"); assert((minTableSize|0)===minTableSize && (minTableSize & (minTableSize-1))===0, "minSize pow2"); assert((maxTableSize|0)===maxTableSize && (maxTableSize & (maxTableSize-1))===0, "maxSize pow2"); }
 			if (!(complexity in tried)) tried[complexity] = {};
 			var stringsCount = strings.length; var hashes = new Array(stringsCount);
-			for (var i = 0; i < iterations; ++i) {
-				var prngCopy = globalPRNG.clone();
-				var exprObj = generateRandomExpression(globalPRNG, complexity, maxTableSize - 1, false, false);
+                var rnd = prng;
+                for (var i = 0; i < iterations; ++i) {
+                                var prngCopy = rnd.clone();
+                                var exprObj = generateRandomExpression(rnd, complexity, maxTableSize - 1, false, false);
 				var expr = exprObj.js;
 				if (complexity >= 4 || !(expr in tried[complexity])) {
 					if (complexity < 4) tried[complexity][expr] = true;
@@ -556,7 +561,7 @@ line
 			if (theHashMaker !== null) {
 				var timeOut = Date.now() + 100;
 				while (Date.now() - timeOut < 0) {
-					var complexity = globalPRNG.nextInt((best === null ? 32 : best.complexity)) + 1;
+                        var complexity = theHashMaker.randomInt((best === null ? 32 : best.complexity)) + 1;
 					var iters = Math.max(200 / strings.length, 1);
 					var found = theHashMaker.search(complexity, iters);
 					if (found !== null) {

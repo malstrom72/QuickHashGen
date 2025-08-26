@@ -60,7 +60,6 @@ function XorshiftPRNG2x32(seed0, seed1) {
 	};
 }
 
-var globalPRNG = new XorshiftPRNG2x32();
 
 // Returns pair: [ string, length ]
 function parseCString(s) {
@@ -214,8 +213,20 @@ if (!("imul" in Math)) {
 	};
 }
 
-function QuickHashGen(strings, minTableSize, maxTableSize, zeroTerminated, allowMultiplication, allowLength, useEvalEngine) {
-	var stringSet = { };
+function QuickHashGen(strings, minTableSize, maxTableSize, zeroTerminated, allowMultiplication, allowLength, useEvalEngine, seed0, seed1) {
+        var stringSet = { };
+
+        // Each QuickHashGen instance maintains its own PRNG to avoid global state.
+        if (typeof seed0 === "undefined") {
+                seed0 = (Math.random() * 0x100000000) >>> 0;
+                seed1 = (Math.random() * 0x100000000) >>> 0;
+        } else if (typeof seed1 === "undefined") {
+                seed1 = 362436069;
+        }
+        var prng = new XorshiftPRNG2x32(seed0, seed1);
+        this.randomInt = function(max) {
+                return prng.nextInt(max);
+        };
 
 	var maxLength = 0;
 	var minLength = 10000000;
@@ -321,9 +332,10 @@ function QuickHashGen(strings, minTableSize, maxTableSize, zeroTerminated, allow
 		var stringsCount = strings.length;
 		var hashes = new Array(stringsCount);
 
-		for (var i = 0; i < iterations; ++i) {
-			var prngCopy = globalPRNG.clone();
-			var exprObj = generateRandomExpression(globalPRNG, complexity, maxTableSize - 1, false, false);
+                var rnd = prng;
+                for (var i = 0; i < iterations; ++i) {
+                        var prngCopy = rnd.clone();
+                        var exprObj = generateRandomExpression(rnd, complexity, maxTableSize - 1, false, false);
 			var expr = exprObj.js;
 			if (complexity >= 4 || !(expr in tried[complexity])) {
 				if (complexity < 4) {
@@ -467,7 +479,6 @@ if (typeof module !== "undefined") {
 	module.exports = {
 		assert: assert,
 		XorshiftPRNG2x32: XorshiftPRNG2x32,
-		globalPRNG: globalPRNG,
 		toHex: toHex,
 		parseCString: parseCString,
 		escapeCString: escapeCString,

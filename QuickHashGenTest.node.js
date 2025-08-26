@@ -1,7 +1,6 @@
 var quickHashGen = require('./QuickHashGenCore');
 
 var QuickHashGen = quickHashGen.QuickHashGen;
-var globalPRNG = quickHashGen.globalPRNG;
 var XorshiftPRNG2x32 = quickHashGen.XorshiftPRNG2x32;
 
 var MAX_COMPLEXITY = 32;
@@ -72,7 +71,7 @@ var theHashMaker = new QuickHashGen(strings, minSize, maxSize, true, true, true)
 
 var found = null;
 while (found === null) {
-        var complexity = globalPRNG.nextInt(MAX_COMPLEXITY) + 1;
+        var complexity = theHashMaker.randomInt(MAX_COMPLEXITY) + 1;
         found = theHashMaker.search(complexity, 100000);
 }
 

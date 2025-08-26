@@ -49,8 +49,7 @@ for (let i = 0; i < args.length; ++i) {
     } else if (a === '--bench') {
         opts.bench = true;
     } else if (a === '--seed' && i + 1 < args.length) {
-        const s0 = parseInt(args[++i], 10);
-        core.globalPRNG = new core.XorshiftPRNG2x32(s0);
+        opts.seed = parseInt(args[++i], 10);
     } else if (a[0] === '-') {
         printUsage();
         process.exit(1);
@@ -76,11 +75,12 @@ let minSize = 1;
 while (strings.length > minSize) minSize <<= 1;
 let maxSize = minSize * 8;
 
-let qh = new core.QuickHashGen(strings, minSize, maxSize, opts.requireZeroTermination, opts.allowMultiplications, opts.allowLength, opts.forceEval);
+let complexityPRNG = new core.XorshiftPRNG2x32(typeof opts.seed === 'number' ? opts.seed : (Math.random() * 0x100000000) >>> 0);
+let qh = new core.QuickHashGen(strings, minSize, maxSize, opts.requireZeroTermination, opts.allowMultiplications, opts.allowLength, opts.forceEval, 123456789, 362436069);
 let best = null;
 
 while (qh.getTestedCount() < opts.tests) {
-    let complexity = core.globalPRNG.nextInt(best === null ? 32 : best.complexity) + 1;
+    let complexity = complexityPRNG.nextInt(best === null ? 32 : best.complexity) + 1;
     let remaining = opts.tests - qh.getTestedCount();
     let iters = Math.max(1, Math.min(remaining, Math.floor(200 / strings.length)));
     let found = qh.search(complexity, iters);
@@ -98,7 +98,7 @@ if (!best) {
 if (opts.evalTest) {
     let expr = qh.generateJSExpression(best);
     let fn;
-    try { fn = eval('(function(n,s){return ' + expr + ';})'); }
+    try { fn = eval('(function(n,w){return ' + expr + ';})'); }
     catch (e) {
         console.error('Eval compile error: ' + (e && e.message ? e.message : String(e)));
         process.exit(1);
@@ -125,13 +125,12 @@ if (opts.evalTest) {
 if (opts.bench) {
     function benchGeneration(useEval) {
         const seed = 123456789;
-        const saved = core.globalPRNG;
-        core.globalPRNG = new core.XorshiftPRNG2x32(seed);
-        let qhBench = new core.QuickHashGen(strings, minSize, maxSize, opts.requireZeroTermination, opts.allowMultiplications, opts.allowLength, useEval);
+        let complexityRng = new core.XorshiftPRNG2x32(seed);
+        let qhBench = new core.QuickHashGen(strings, minSize, maxSize, opts.requireZeroTermination, opts.allowMultiplications, opts.allowLength, useEval, 123456789, 362436069);
         let bestBench = null;
         const start = process.hrtime.bigint();
         while (qhBench.getTestedCount() < opts.tests) {
-            let complexity = core.globalPRNG.nextInt(bestBench === null ? 32 : bestBench.complexity) + 1;
+            let complexity = complexityRng.nextInt(bestBench === null ? 32 : bestBench.complexity) + 1;
             let remaining = opts.tests - qhBench.getTestedCount();
             let iters = Math.max(1, Math.min(remaining, Math.floor(200 / strings.length)));
             let found = qhBench.search(complexity, iters);
@@ -141,7 +140,6 @@ if (opts.bench) {
             }
         }
         const elapsed = Number(process.hrtime.bigint() - start) / 1e6;
-        core.globalPRNG = saved;
         return elapsed;
     }
     let tFunc = benchGeneration(false);
