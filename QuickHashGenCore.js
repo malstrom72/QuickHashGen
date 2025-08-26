@@ -264,8 +264,8 @@ function QuickHashGen(strings, minTableSize, maxTableSize, zeroTerminated, allow
 		// RNG decisions are identical regardless of cpp/js to keep PRNG in sync.
 		function leaf_n() { return {prec:4, c:'n', js:'n', fn:function(n,w){return n|0;}}; }
                 function leaf_const() { var k=(rnd.nextInt32() & constantMask)|0; var s=String(k); return {prec:4, c:s+'u', js:s, fn:function(){return k;}}; }
-                function leaf_w_in() { var idx=rnd.nextInt(safeLength)|0; return {prec:4, c:'p['+idx+']', js:'w['+idx+']', fn:function(n,w){ return w[idx]|0; }}; }
-                function leaf_w_out() { var span=(maxLength - safeLength)|0; var i=(rnd.nextInt(Math.max(1,span)) + safeLength)|0; return {prec:4, c:'(' + i + ' < n ? p['+i+'] : 0)', js:'w['+i+']', fn:function(n,w){ return w[i]|0; }}; }
+                function leaf_w_in() { var idx=rnd.nextInt(safeLength)|0; return {prec:4, c:'p['+idx+']', js:'(w['+idx+']|0)', fn:function(n,w){ return w[idx]|0; }}; }
+                function leaf_w_out() { var span=(maxLength - safeLength)|0; var i=(rnd.nextInt(Math.max(1,span)) + safeLength)|0; return {prec:4, c:'(' + i + ' < n ? p['+i+'] : 0)', js:'(w['+i+']|0)', fn:function(n,w){ return w[i]|0; }}; }
 		function needsPar(a,prec){ return (!compact || a.prec < prec); }
                function wrapC(a,prec){ return needsPar(a,prec) ? '('+a.c+')' : a.c; }
                function wrapJ(a,prec){ return needsPar(a,prec) ? '('+a.js+')' : a.js; }
