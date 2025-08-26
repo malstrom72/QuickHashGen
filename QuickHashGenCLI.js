@@ -76,7 +76,7 @@ while (strings.length > minSize) minSize <<= 1;
 let maxSize = minSize * 8;
 
 let complexityPRNG = new core.XorshiftPRNG2x32(typeof opts.seed === 'number' ? opts.seed : (Math.random() * 0x100000000) >>> 0);
-let qh = new core.QuickHashGen(strings, minSize, maxSize, opts.requireZeroTermination, opts.allowMultiplications, opts.allowLength, opts.forceEval, 123456789, 362436069);
+let qh = new core.QuickHashGen(strings, minSize, maxSize, opts.requireZeroTermination, opts.allowMultiplications, opts.allowLength, opts.forceEval, opts.evalTest, 123456789, 362436069);
 let best = null;
 
 while (qh.getTestedCount() < opts.tests) {
@@ -95,38 +95,13 @@ if (!best) {
     process.exit(1);
 }
 
-if (opts.evalTest) {
-    let expr = qh.generateJSExpression(best);
-    let fn;
-    try { fn = eval('(function(n,w){return ' + expr + ';})'); }
-    catch (e) {
-        console.error('Eval compile error: ' + (e && e.message ? e.message : String(e)));
-        process.exit(1);
-    }
-    let minLen = Infinity; for (let i = 0; i < strings.length; ++i) { let L = strings[i].length; if (L < minLen) minLen = L; }
-    let padLen = opts.requireZeroTermination ? (minLen + 1) : minLen;
-    for (let j = 0; j < strings.length; ++j) {
-        let str = strings[j];
-        let n = str.length;
-        let arr = new Array(Math.max(padLen, n));
-        for (let k = 0; k < arr.length; ++k) {
-            let c = (k < n ? str.charCodeAt(k) : 0);
-            if (c >= 128) c -= 256;
-            arr[k] = c;
-        }
-        let idx = fn(n, arr) & (best.table.length - 1);
-        if (best.table[idx] !== j) {
-            console.error('Eval mismatch on #' + j);
-            process.exit(1);
-        }
-    }
-}
+
 
 if (opts.bench) {
     function benchGeneration(useEval) {
         const seed = 123456789;
         let complexityRng = new core.XorshiftPRNG2x32(seed);
-        let qhBench = new core.QuickHashGen(strings, minSize, maxSize, opts.requireZeroTermination, opts.allowMultiplications, opts.allowLength, useEval, 123456789, 362436069);
+        let qhBench = new core.QuickHashGen(strings, minSize, maxSize, opts.requireZeroTermination, opts.allowMultiplications, opts.allowLength, useEval, false, 123456789, 362436069);
         let bestBench = null;
         const start = process.hrtime.bigint();
         while (qhBench.getTestedCount() < opts.tests) {
