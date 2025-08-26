@@ -7,7 +7,8 @@ static int lookup(int n /* string length */, const char* s /* string (zero termi
 	static const int HASH_TABLE[16] = {
 		0, 1, 2, 3, 4, 5, 6, 7, 8, 9, -1, -1, -1, -1, -1, -1
 	};
+	const unsigned char* p = (const unsigned char*) s;
 	if (n < 12 || n > 12) return -1;
-	int stringIndex = HASH_TABLE[(s[8]) & 15];
+	int stringIndex = HASH_TABLE[(p[8]) & 15u];
 	return (stringIndex >= 0 && strcmp(s, STRINGS[stringIndex]) == 0) ? stringIndex : -1;
 }

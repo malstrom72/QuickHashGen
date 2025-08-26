@@ -1,33 +1,35 @@
 "use strict";
 // ===== Output templates =====
 var ZERO_TERMINATED_TEMPLATE =
-	"/* Built with http://nuedge.net/StringHashMaker */\n" +
-	"static int <<findSomething>>(int n /* string length */, const char* s /* string (zero terminated) */) {\n" +
-	"\tstatic const char* STRINGS[${stringCount}] = {\n" +
-	"\t\t${stringList}\n" +
-	"\t};\n" +
-	"\tstatic const int HASH_TABLE[${tableSize}] = {\n" +
-	"\t\t${tableData}\n" +
-	"\t};\n" +
-	"\tassert(s[n] == '\\0');\n" +
-	"\tif (n < ${minLength} || n > ${maxLength}) return -1;\n" +
-	"\tint stringIndex = HASH_TABLE[${hashExpression}];\n" +
-	"\treturn (stringIndex >= 0 && strcmp(s, STRINGS[stringIndex]) == 0) ? stringIndex : -1;\n" +
-	"}";
+        "/* Built with http://nuedge.net/StringHashMaker */\n" +
+        "static int <<findSomething>>(int n /* string length */, const char* s /* string (zero terminated) */) {\n" +
+        "\tstatic const char* STRINGS[${stringCount}] = {\n" +
+        "\t\t${stringList}\n" +
+        "\t};\n" +
+        "\tstatic const int HASH_TABLE[${tableSize}] = {\n" +
+        "\t\t${tableData}\n" +
+        "\t};\n" +
+        "\tconst unsigned char* p = (const unsigned char*) s;\n" +
+        "\tassert(s[n] == '\\0');\n" +
+        "\tif (n < ${minLength} || n > ${maxLength}) return -1;\n" +
+        "\tint stringIndex = HASH_TABLE[${hashExpression}];\n" +
+        "\treturn (stringIndex >= 0 && strcmp(s, STRINGS[stringIndex]) == 0) ? stringIndex : -1;\n" +
+        "}";
 var NON_ZERO_TERMINATED_TEMPLATE =
-	"/* Built with http://nuedge.net/StringHashMaker */\n" +
-	"static int <<findSomething>>(int n /* string length */, const char* s /* string (zero termination not required) */) {\n" +
-	"\tstatic const char* STRINGS[${stringCount}] = {\n" +
-	"\t\t${stringList}\n" +
-	"\t};\n" +
-	"\tstatic const int HASH_TABLE[${tableSize}] = {\n" +
-	"\t\t${tableData}\n" +
-	"\t};\n" +
-	"\t// zero-termination not expected\n" +
-	"\tif (n < ${minLength} || n > ${maxLength}) return -1;\n" +
-	"\tint stringIndex = HASH_TABLE[${hashExpression}];\n" +
-	"\treturn (stringIndex >= 0 && strncmp(s, STRINGS[stringIndex], n) == 0 && STRINGS[stringIndex][n] == 0) ? stringIndex : -1;\n" +
-	"}";
+        "/* Built with http://nuedge.net/StringHashMaker */\n" +
+        "static int <<findSomething>>(int n /* string length */, const char* s /* string (zero termination not required) */) {\n" +
+        "\tstatic const char* STRINGS[${stringCount}] = {\n" +
+        "\t\t${stringList}\n" +
+        "\t};\n" +
+        "\tstatic const int HASH_TABLE[${tableSize}] = {\n" +
+        "\t\t${tableData}\n" +
+        "\t};\n" +
+        "\tconst unsigned char* p = (const unsigned char*) s;\n" +
+        "\t// zero-termination not expected\n" +
+        "\tif (n < ${minLength} || n > ${maxLength}) return -1;\n" +
+        "\tint stringIndex = HASH_TABLE[${hashExpression}];\n" +
+        "\treturn (stringIndex >= 0 && strncmp(s, STRINGS[stringIndex], n) == 0 && STRINGS[stringIndex][n] == 0) ? stringIndex : -1;\n" +
+        "}";
 // ===== DOM wiring & state =====
 var HTML_ELEMENTS = [
 	"editor",
@@ -687,30 +689,30 @@ function rewriteZeroTerminationMode(code, zeroTerminated) {
 				? "/* string (zero terminated) */"
 				: "/* string (zero termination not required) */",
 		);
-		// 2) Toggle assert (preserve indentation and following line's tab)
-		if (zeroTerminated) {
-			code = code.replace(
-				/\t\/\/\s*zero-termination not expected\s*\n\t\/\/\s*assert\(s\[n\]\s*==\s*'\\0'\);/m,
-				"\tassert(s[n] == '\\0');",
-			);
-		} else {
-			code = code.replace(
-				/\tassert\(s\[n\]\s*==\s*'\\0'\);/m,
-				"\t// zero-termination not expected\n\t// assert(s[n] == '\\0');",
-			);
-		}
-		// 3) Switch return line
-		if (zeroTerminated) {
-			code = code.replace(
-				/return\s*\(stringIndex\s*>=\s*0\s*&&\s*strncmp\([^;]+;/m,
-				"return (stringIndex >= 0 && strcmp(s, STRINGS[stringIndex]) == 0) ? stringIndex : -1;",
-			);
-		} else {
-			code = code.replace(
-				/return\s*\(stringIndex\s*>=\s*0\s*&&\s*strcmp\([^;]+;/m,
-				"return (stringIndex >= 0 && strncmp(s, STRINGS[stringIndex], n) == 0 && STRINGS[stringIndex][n] == 0) ? stringIndex : -1;",
-			);
-		}
+                // 2) Toggle assert (preserve indentation and following line's tab)
+                if (zeroTerminated) {
+                        code = code.replace(
+                                /\t\/\/\s*zero-termination not expected\s*\n\t\/\/\s*assert\(s\[n\]\s*==\s*'\\0'\);/m,
+                                "\tassert(s[n] == '\\0');",
+                        );
+                } else {
+                        code = code.replace(
+                                /\tassert\(s\[n\]\s*==\s*'\\0'\);/m,
+                                "\t// zero-termination not expected\n\t// assert(s[n] == '\\0');",
+                        );
+                }
+                // 3) Switch return line
+                if (zeroTerminated) {
+                        code = code.replace(
+                                /return\s*\(stringIndex\s*>=\s*0\s*&&\s*strncmp\(s,/m,
+                                "return (stringIndex >= 0 && strcmp(s, STRINGS[stringIndex]) == 0) ? stringIndex : -1;",
+                        );
+                } else {
+                        code = code.replace(
+                                /return\s*\(stringIndex\s*>=\s*0\s*&&\s*strcmp\(s,/m,
+                                "return (stringIndex >= 0 && strncmp(s, STRINGS[stringIndex], n) == 0 && STRINGS[stringIndex][n] == 0) ? stringIndex : -1;",
+                        );
+                }
 	} catch (_) {}
 	return code;
 }
@@ -756,21 +758,21 @@ function runSelfTests() {
 		if (typeof window.toggleRun !== "function") throw new Error("not global");
 	});
 	T("match HASH_TABLE brackets", function () {
-		var line =
-			"int stringIndex = HASH_TABLE[((s[1] + n) & 31) ^ (9 < n ? s[9] : 0)];";
+                var line =
+                        "int stringIndex = HASH_TABLE[((p[1] + n) & 31) ^ (9 < n ? p[9] : 0)];";
 		var i = line.indexOf("[");
 		var j = findMatchingSquare(line, i);
 		if (j !== line.length - 2) throw new Error("mismatch " + j);
 	});
 	T("extract editor expr", function () {
-		var code = "int stringIndex = HASH_TABLE[(n ^ s[0]) & 15];";
-		var expr = extractEditorHashExpr(code);
-		if (!expr || expr.indexOf("(n ^ s[0]) & 15") < 0)
-			throw new Error("extract failed: " + expr);
+                var code = "int stringIndex = HASH_TABLE[(n ^ p[0]) & 15];";
+                var expr = extractEditorHashExpr(code);
+                if (!expr || expr.indexOf("(n ^ p[0]) & 15") < 0)
+                        throw new Error("extract failed: " + expr);
 	});
 	T("rewrite zero-term off/on", function () {
-		var code0 =
-			"static int f(int n, const char* s /* string (zero terminated) */) {\n\tassert(s[n] == '\\0');\n\tif (n < 2) return -1;\n\tint stringIndex = 0;\n\treturn (stringIndex >= 0 && strcmp(s, STRINGS[stringIndex]) == 0) ? stringIndex : -1;\n}";
+                var code0 =
+                        "static int f(int n, const char* s /* string (zero terminated) */) {\n\tconst unsigned char* p = (const unsigned char*) s;\n\tassert(s[n] == '\\0');\n\tif (n < 2) return -1;\n\tint stringIndex = 0;\n\treturn (stringIndex >= 0 && strcmp(s, STRINGS[stringIndex]) == 0) ? stringIndex : -1;\n}";
 		var off = rewriteZeroTerminationMode(code0, false);
 		if (off.indexOf("zero termination not required") < 0)
 			throw new Error("sig not switched");
@@ -782,8 +784,8 @@ function runSelfTests() {
 		var on = rewriteZeroTerminationMode(off, true);
 		if (on.indexOf("zero terminated") < 0) throw new Error("sig not restored");
 		if (on.indexOf("strcmp(") < 0) throw new Error("return not restored");
-		if (/\tassert\(s\[n\]\s*==\s*'\\0'\)/.test(on) === false)
-			throw new Error("assert not restored");
+                if (/\tassert\(s\[n\]\s*==\s*'\\0'\)/.test(on) === false)
+                        throw new Error("assert not restored");
 	});
 	var msg =
 		fail === 0
