@@ -137,11 +137,13 @@ if (opts.bench) {
     let fnEval = eval('(function(n,w){return ' + expr + ';})');
     let fnFunc = evalObj.fn;
     let ITERS = 100000;
-    while (true) {
+    const MAX_ITERS = 10000000;
+    const TARGET_MS = 100;
+    while (ITERS < MAX_ITERS) {
         let t0 = Date.now();
         for (let i = 0; i < ITERS; ++i) fnEval(n, arr);
         let t = Date.now() - t0;
-        if (t >= 250) break;
+        if (t >= TARGET_MS) break;
         ITERS *= 2;
     }
     // warm up functional engine
