@@ -14,6 +14,7 @@ function printUsage() {
     console.error('  --eval-test              verify result using chosen engine');
     console.error('  --force-eval             use eval engine (if available)');
     console.error('  --bench                  benchmark eval vs Function engines');
+    console.error('  --seed N                seed the random generator');
     console.error('');
     console.error('Strings are read from [input-file] or stdin. Each line may be');
     console.error('plain text or one or more C-style quoted strings separated by');
@@ -47,6 +48,9 @@ for (let i = 0; i < args.length; ++i) {
         opts.forceEval = true;
     } else if (a === '--bench') {
         opts.bench = true;
+    } else if (a === '--seed' && i + 1 < args.length) {
+        const s0 = parseInt(args[++i], 10);
+        core.globalPRNG = new core.XorshiftPRNG2x32(s0);
     } else if (a[0] === '-') {
         printUsage();
         process.exit(1);
