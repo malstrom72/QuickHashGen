@@ -1,4 +1,5 @@
 /* Built with QuickHashGen CLI */
+// Seed: 17
 static int lookup(int n /* string length */, const char* s /* string (zero terminated) */) {
 	static const char* STRINGS[10] = {
 		"abc123450xyz", "abc123451xyz", "abc123452xyz", "abc123453xyz", "abc123454xyz", 

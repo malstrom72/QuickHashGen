@@ -1,4 +1,5 @@
 /* Built with QuickHashGen CLI */
+// Seed: 23
 static int lookup(int n /* string length */, const char* s /* string (zero terminated) */) {
 	static const char* STRINGS[30] = {
 		"baaaa", "abaaa", "aabaa", "aaaba", "aaaab", "caaaa", "acaaa", "aacaa", 

@@ -1,4 +1,5 @@
 /* Built with QuickHashGen CLI */
+// Seed: 123
 static int lookup(int n /* string length */, const char* s /* string (zero terminated) */) {
 	static const char* STRINGS[4] = {
 		"black", "white", "blue", "yellow"

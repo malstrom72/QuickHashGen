@@ -227,6 +227,7 @@ function QuickHashGen(strings, minTableSize, maxTableSize, zeroTerminated, allow
         this.randomInt = function(max) {
                 return prng.nextInt(max);
         };
+        this.getSeed = function() { return seed0; };
 
 	var maxLength = 0;
 	var minLength = 10000000;
@@ -472,16 +473,17 @@ function QuickHashGen(strings, minTableSize, maxTableSize, zeroTerminated, allow
         this.generateCOutput = function(template, foundSolution) {
                 var cExpression = this.generateCExpression(foundSolution);
 
-		var replaceMap = {
-			'minLength': function() { return minLength; },
-			'maxLength': function() { return maxLength; },
-			'stringCount': function() { return strings.length; },
-			'stringList': function(pre) { return stringListToC(strings, 80, pre); },
-			'tableSize': function() { return foundSolution.table.length; },
-			'tableData': function(pre) { return numberListToC(foundSolution.table, 16, 0, pre); },
-			'hashExpression': function() { return cExpression; },
-			'stringDescription': function() { return (zeroTerminated ? "zero terminated" : "zero termination not required"); }
-		};
+                var replaceMap = {
+                        'minLength': function() { return minLength; },
+                        'maxLength': function() { return maxLength; },
+                        'stringCount': function() { return strings.length; },
+                        'stringList': function(pre) { return stringListToC(strings, 80, pre); },
+                        'tableSize': function() { return foundSolution.table.length; },
+                        'tableData': function(pre) { return numberListToC(foundSolution.table, 16, 0, pre); },
+                        'hashExpression': function() { return cExpression; },
+                        'stringDescription': function() { return (zeroTerminated ? "zero terminated" : "zero termination not required"); },
+                        'seed': function() { return seed0; }
+                };
 
 		var output = '';
 		var input = template;

@@ -2,6 +2,7 @@
 // ===== Output templates =====
 var ZERO_TERMINATED_TEMPLATE =
         "/* Built with http://nuedge.net/StringHashMaker */\n" +
+        "// Seed: ${seed}\n" +
         "static int <<findSomething>>(int n /* string length */, const char* s /* string (zero terminated) */) {\n" +
         "\tstatic const char* STRINGS[${stringCount}] = {\n" +
         "\t\t${stringList}\n" +
@@ -17,6 +18,7 @@ var ZERO_TERMINATED_TEMPLATE =
         "}";
 var NON_ZERO_TERMINATED_TEMPLATE =
         "/* Built with http://nuedge.net/StringHashMaker */\n" +
+        "// Seed: ${seed}\n" +
         "static int <<findSomething>>(int n /* string length */, const char* s /* string (zero termination not required) */) {\n" +
         "\tstatic const char* STRINGS[${stringCount}] = {\n" +
         "\t\t${stringList}\n" +
@@ -104,12 +106,13 @@ if (elements.forceEval)
 	});
 var currentTemplate = ZERO_TERMINATED_TEMPLATE;
 var theHashMaker = null,
-	lastInputText = elements.editor.value,
-	solutionsCounter = 0,
-	strings = [],
-	minSize,
-	maxSize,
-	best = null;
+        lastInputText = elements.editor.value,
+        solutionsCounter = 0,
+        strings = [],
+        minSize,
+        maxSize,
+        best = null,
+        currentSeed = 0;
 var ENGINE_USE_EVAL = false;
 var EVAL_ALLOWED = false;
 // ===== Controls =====
@@ -258,18 +261,31 @@ function applyBestToEditor(found) {
 		useStart >= 0
 			? code.indexOf("HASH_TABLE[", useStart)
 			: code.lastIndexOf("HASH_TABLE[");
-	if (startIdx >= 0) {
-		var bOpen = code.indexOf("[", startIdx);
-		var bClose = findMatchingSquare(code, bOpen);
-		if (bOpen >= 0 && bClose > bOpen) {
-			var cExpr = theHashMaker
-				.generateCOutput("${hashExpression}", found)
-				.trim();
-			code = code.slice(0, bOpen + 1) + cExpr + code.slice(bClose);
-		}
-	}
-	elements.editor.value = code;
-	lastInputText = elements.editor.value;
+        if (startIdx >= 0) {
+                var bOpen = code.indexOf("[", startIdx);
+                var bClose = findMatchingSquare(code, bOpen);
+                if (bOpen >= 0 && bClose > bOpen) {
+                        var cExpr = theHashMaker
+                                .generateCOutput("${hashExpression}", found)
+                                .trim();
+                        code = code.slice(0, bOpen + 1) + cExpr + code.slice(bClose);
+                }
+        }
+        var builtIdx = code.indexOf("/* Built with http://nuedge.net/StringHashMaker */");
+        if (builtIdx >= 0) {
+                var insertPos = code.indexOf("\n", builtIdx);
+                if (insertPos < 0) insertPos = code.length;
+                else insertPos++;
+                if (code.substr(insertPos, 8) === "// Seed:") {
+                        var lineEnd = code.indexOf("\n", insertPos);
+                        if (lineEnd < 0) lineEnd = code.length;
+                        code = code.slice(0, insertPos) + "// Seed: " + currentSeed + code.slice(lineEnd);
+                } else {
+                        code = code.slice(0, insertPos) + "// Seed: " + currentSeed + "\n" + code.slice(insertPos);
+                }
+        }
+        elements.editor.value = code;
+        lastInputText = elements.editor.value;
 }
 function resetSearch() {
 	theHashMaker = null;
@@ -290,31 +306,34 @@ function resetSearch() {
 		elements.forceEval &&
 		elements.forceEval.checked
 	);
-	updateModeLabel();
-	try {
-		strings = parseStringsFromEditor(lastInputText);
-	} catch (_) {
-		strings = [];
-	}
-	if (strings.length > 0) {
-		for (minSize = 1; strings.length > minSize; minSize <<= 1);
-		maxSize = minSize * 8;
-		theHashMaker = new QuickHashGen(
-			strings,
-			minSize,
-			maxSize,
-			elements.requireZeroTermination.checked,
-			elements.allowMultiplications.checked,
+        updateModeLabel();
+        try {
+                strings = parseStringsFromEditor(lastInputText);
+        } catch (_) {
+                strings = [];
+        }
+        if (strings.length > 0) {
+                for (minSize = 1; strings.length > minSize; minSize <<= 1);
+                maxSize = minSize * 8;
+                var m = /\/\/\s*Seed:\s*(\d+)/.exec(lastInputText);
+                currentSeed = m ? (parseInt(m[1], 10) >>> 0) : ((Math.random() * 0x100000000) >>> 0);
+                theHashMaker = new QuickHashGen(
+                        strings,
+                        minSize,
+                        maxSize,
+                        elements.requireZeroTermination.checked,
+                        elements.allowMultiplications.checked,
                         elements.allowLength.checked,
                         ENGINE_USE_EVAL,
                         elements.evalTest && elements.evalTest.checked,
+                        currentSeed,
                 );
-		elements.hashes.innerHTML = "";
-		elements.testedCount.innerHTML = "0";
-		elements.solutionsCount.innerHTML = "0";
-		elements.complexity.innerHTML = "?";
-		elements.tableSize.innerHTML = "?";
-	}
+                elements.hashes.innerHTML = "";
+                elements.testedCount.innerHTML = "0";
+                elements.solutionsCount.innerHTML = "0";
+                elements.complexity.innerHTML = "?";
+                elements.tableSize.innerHTML = "?";
+        }
 }
 function updateCodeMetadata() {
 	try {

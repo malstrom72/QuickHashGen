@@ -75,7 +75,8 @@ let minSize = 1;
 while (strings.length > minSize) minSize <<= 1;
 let maxSize = minSize * 8;
 
-let complexityPRNG = new core.XorshiftPRNG2x32(typeof opts.seed === 'number' ? opts.seed : (Math.random() * 0x100000000) >>> 0);
+let seed = typeof opts.seed === 'number' ? opts.seed : (Math.random() * 0x100000000) >>> 0;
+let complexityPRNG = new core.XorshiftPRNG2x32(seed);
 let qh = new core.QuickHashGen(strings, minSize, maxSize, opts.requireZeroTermination, opts.allowMultiplications, opts.allowLength, opts.forceEval, opts.evalTest, 123456789, 362436069);
 let best = null;
 
@@ -152,4 +153,6 @@ const NONZERO_TEMPLATE = '/* Built with QuickHashGen CLI */\n'
  + '}\n';
 
 let TEMPLATE = opts.requireZeroTermination ? ZERO_TEMPLATE : NONZERO_TEMPLATE;
-process.stdout.write(qh.generateCOutput(TEMPLATE, best));
+let out = qh.generateCOutput(TEMPLATE, best);
+out = out.replace('/* Built with QuickHashGen CLI */\n', '/* Built with QuickHashGen CLI */\n// Seed: ' + seed + '\n');
+process.stdout.write(out);
