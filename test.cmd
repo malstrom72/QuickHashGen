@@ -2,6 +2,9 @@
 setlocal
 
 node QuickHashGenCLI.js --seed 1 --tests 100 tests\input1.txt > tests\out1.c
+node QuickHashGenCLI.js --seed 1 --tests 100 --force-eval --eval-test tests\input1.txt > tests\out1_eval.c
+if errorlevel 1 exit /b 1
+fc tests\out1.c tests\out1_eval.c > nul
 if errorlevel 1 exit /b 1
 fc tests\out1.c tests\golden1.c > nul
 if errorlevel 1 exit /b 1
@@ -34,6 +37,6 @@ if errorlevel 1 exit /b 1
 fc tests\out8.c tests\golden8.c > nul
 if errorlevel 1 exit /b 1
 
-del tests\out1.c tests\out2.c tests\out3.c tests\out4.c tests\out5.c tests\out6.c tests\out7.c tests\out8.c
+del tests\out1.c tests\out1_eval.c tests\out2.c tests\out3.c tests\out4.c tests\out5.c tests\out6.c tests\out7.c tests\out8.c
 
 echo All tests passed.
