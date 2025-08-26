@@ -88,11 +88,10 @@ else if (ch === ']') { depth--; if (depth === 0) return i; }
 return -1;
 }
 
-function detectEvalAllowed() {
+function detectEvalAllowed(){
 try {
-eval('1');
-new Function('return 1;');
-return true;
+var f = eval("(function(n,w){return (n|0)+(w[0]|0);})");
+return f(1,[2]) === 3;
 } catch (_) {
 return false;
 }

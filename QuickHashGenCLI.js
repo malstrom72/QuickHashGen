@@ -97,9 +97,12 @@ if (!best) {
 
 if (opts.evalTest) {
     let expr = qh.generateCOutput("${hashExpression}", best).trim();
-    let fn = opts.forceEval
-        ? eval('(function(n,s){return ' + expr + ';})')
-        : new Function('n','s','return ' + expr + ';');
+    let fn;
+    try { fn = eval('(function(n,s){return ' + expr + ';})'); }
+    catch (e) {
+        console.error('Eval compile error: ' + (e && e.message ? e.message : String(e)));
+        process.exit(1);
+    }
     let minLen = Infinity; for (let i = 0; i < strings.length; ++i) { let L = strings[i].length; if (L < minLen) minLen = L; }
     let padLen = opts.requireZeroTermination ? (minLen + 1) : minLen;
     for (let j = 0; j < strings.length; ++j) {
@@ -131,15 +134,11 @@ if (opts.bench) {
         arr[i] = c;
     }
     const ITERS = 100000;
-    let fnFunc = new Function('n','s','return ' + expr + ';');
     let fnEval = eval('(function(n,s){return ' + expr + ';})');
     let t0 = Date.now();
-    for (let i = 0; i < ITERS; ++i) fnFunc(n, arr);
-    let tFunc = Date.now() - t0;
-    t0 = Date.now();
     for (let i = 0; i < ITERS; ++i) fnEval(n, arr);
     let tEval = Date.now() - t0;
-    console.error('Benchmark (' + ITERS + ' iterations): Function=' + tFunc + 'ms, eval=' + tEval + 'ms');
+    console.error('Benchmark (' + ITERS + ' iterations): eval=' + tEval + 'ms');
 }
 
 const ZERO_TEMPLATE = '/* Built with QuickHashGen CLI */\n'
