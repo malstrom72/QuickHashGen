@@ -181,14 +181,13 @@ function findMatchingSquare(code, openIndex) {
 	return -1;
 }
 
-function detectEvalAllowed() {
-	try {
-		eval("1");
-		new Function("return 1;");
-		return true;
-	} catch (_) {
-		return false;
-	}
+function detectEvalAllowed(){
+  try {
+    var f = eval("(function(n,w){return (n|0)+(w[0]|0);})");
+    return f(1,[2]) === 3;
+  } catch (_) {
+    return false;
+  }
 }
 // ---- Eval-based verification (expression generated for C) ----
 function _baseStatusText() {

@@ -242,57 +242,47 @@ function QuickHashGen(strings, minTableSize, maxTableSize, zeroTerminated, allow
 		stringChars[i] = a;
 	}
 
-        var safeLength = (zeroTerminated ? minLength + 1 : minLength);
+	var safeLength = (zeroTerminated ? minLength + 1 : minLength);
 
-        if (typeof useEvalEngine === "undefined") useEvalEngine = false;
+	if (typeof useEvalEngine === "undefined") useEvalEngine = false;
 
 	function generateRandomExpression(rnd, complexity, constantMask, cpp, compact) {
-
-		var OPS;
-		if (cpp) {
-			// [ precedence, min complexity, max complexity, generator function ]
-			OPS = [
-				[ 4, 1, 1, function() { return 'n'; } ],
-				[ 4, 1, 1, function() { return (rnd.nextInt32() & constantMask); } ],
-				[ 4, 1, 1, function() { return 's[' + rnd.nextInt(safeLength) + ']'; } ],
-				[ 4, 2, 2, function() { var i = (rnd.nextInt(maxLength - safeLength) + safeLength); return '(' + i + ' < n ? s[' + i + '] : 0)'; } ],
-				[ 1, 2, Infinity, function(c) { return rndExpr(c - 1, 1) + ' << ' + (rnd.nextInt(31) + 1); } ],
-				[ 1, 2, Infinity, function(c) { return rndExpr(c - 1, 1) + ' >> ' + (rnd.nextInt(31) + 1); } ],
-				[ 2, 2, Infinity, function(c) { var b = rnd.nextInt(c - 1) + 1; return rndExpr(b, 2) + ' + ' + rndExpr(c - b, 2); } ],
-				[ 2, 2, Infinity, function(c) { var b = rnd.nextInt(c - 1) + 1; return rndExpr(b, 2) + ' - ' + rndExpr(c - b, 3); } ], // that's right, right-hand side of - must have one higher prec to avoid x - (y - z) becoming x - y - z
-				[ 0, 2, Infinity, function(c) { var b = rnd.nextInt(c - 1) + 1; return rndExpr(b, 0) + ' ^ ' + rndExpr(c - b, 0); } ],
-				[ 3, 2, Infinity, function(c) { var b = rnd.nextInt(c - 1) + 1; return rndExpr(b, 3) + ' * ' + rndExpr(c - b, 3); } ]
-			];
-		} else {
-			// [ precedence, min complexity, max complexity, generator function ]
-			OPS = [
-				[ 4, 1, 1, function() { return 'n'; } ],
-				[ 4, 1, 1, function() { return (rnd.nextInt32() & constantMask); } ],
-				[ 4, 1, 1, function() { return 'w[' + rnd.nextInt(safeLength) + ']'; } ],
-				[ 4, 2, 2, function() { return 'w[' + (rnd.nextInt(maxLength - safeLength) + safeLength) + ']'; } ],
-				[ 1, 2, Infinity, function(c) { return rndExpr(c - 1, 1) + ' << ' + (rnd.nextInt(31) + 1); } ],
-				[ 1, 2, Infinity, function(c) { return rndExpr(c - 1, 1) + ' >> ' + (rnd.nextInt(31) + 1); } ],
-				[ 2, 2, Infinity, function(c) { var b = rnd.nextInt(c - 1) + 1; return rndExpr(b, 2) + ' + ' + rndExpr(c - b, 2); } ],
-				[ 2, 2, Infinity, function(c) { var b = rnd.nextInt(c - 1) + 1; return rndExpr(b, 2) + ' - ' + rndExpr(c - b, 3); } ], // that's right, right-hand side of - must have one higher prec to avoid x - (y - z) becoming x - y - z
-				[ 0, 2, Infinity, function(c) { var b = rnd.nextInt(c - 1) + 1; return rndExpr(b, 0) + ' ^ ' + rndExpr(c - b, 0); } ],
-				[ 3, 2, Infinity, function(c) { var b = rnd.nextInt(c - 1) + 1; return 'Math.imul(' + rndExpr(b, 0) + ', ' + rndExpr(c - b, 0) + ')'; } ] // 0 prec here to avoid any ( )
-			];
-		}
-
+		// Unified generator: builds a single AST that yields
+		//  - .c  : C/C++ source
+		//  - .js : JS source equivalent
+		//  - .fn : CSP-safe evaluator
+		// RNG decisions are identical regardless of cpp/js to keep PRNG in sync.
+		function leaf_n() { return {prec:4, c:'n', js:'n', fn:function(n,w){return n|0;}}; }
+		function leaf_const() { var k=(rnd.nextInt32() & constantMask)|0; var s=String(k); return {prec:4, c:s, js:s, fn:function(){return k;}}; }
+		function leaf_w_in() { var idx=rnd.nextInt(safeLength)|0; return {prec:4, c:'s['+idx+']', js:'w['+idx+']', fn:function(n,w){ return w[idx]|0; }}; }
+		function leaf_w_out() { var span=(maxLength - safeLength)|0; var i=(rnd.nextInt(Math.max(1,span)) + safeLength)|0; return {prec:4, c:'(' + i + ' < n ? s['+i+'] : 0)', js:'w['+i+']', fn:function(n,w){ return w[i]|0; }}; }
+		function needsPar(a,prec){ return (!compact || a.prec < prec); }
+		function wrapC(a,prec){ return needsPar(a,prec) ? '('+a.c+')' : a.c; }
+		function wrapJ(a,prec){ return needsPar(a,prec) ? '('+a.js+')' : a.js; }
+		function bin(a,b,op,prec,evalFn){ return {prec:prec, c: wrapC(a,prec)+' '+op+' '+wrapC(b,prec), js: wrapJ(a,prec)+' '+op+' '+wrapJ(b,prec), fn:function(n,w){ return evalFn(a.fn(n,w), b.fn(n,w)); }}; }
+		function sh(a,dir,shamt){ var c=a.c+' '+dir+' '+shamt; var j=a.js+' '+dir+' '+shamt; return {prec:1, c:c, js:j, fn:function(n,w){ var v=a.fn(n,w)|0; return (dir==='<<' ? (v<<shamt) : (v>>shamt))|0; }}; }
+		function mul(a,b){ var c = wrapC(a,3)+' * '+wrapC(b,3); var j = 'Math.imul('+a.js+', '+b.js+')'; return {prec:3, c:c, js:j, fn:function(n,w){ return Math.imul(a.fn(n,w), b.fn(n,w)); }}; }
+		var OPS = [
+			[ 4, 1, 1, function(){ return leaf_n(); } ],
+			[ 4, 1, 1, function(){ return leaf_const(); } ],
+			[ 4, 1, 1, function(){ return leaf_w_in(); } ],
+			[ 4, 2, 2, function(){ return leaf_w_out(); } ],
+			[ 1, 2, Infinity, function(c){ var a=rndExpr(c-1,1); var shv=(rnd.nextInt(31)+1)|0; return sh(a,'<<',shv); } ],
+			[ 1, 2, Infinity, function(c){ var a=rndExpr(c-1,1); var shv=(rnd.nextInt(31)+1)|0; return sh(a,'>>',shv); } ],
+			[ 2, 2, Infinity, function(c){ var b=rnd.nextInt(c-1)+1; var L=rndExpr(b,2), R=rndExpr(c-b,2); return bin(L,R,'+',2,function(x,y){return (x+y)|0;}); } ],
+			[ 2, 2, Infinity, function(c){ var b=rnd.nextInt(c-1)+1; var L=rndExpr(b,2), R=rndExpr(c-b,3); return bin(L,R,'-',2,function(x,y){return (x-y)|0;}); } ],
+			[ 0, 2, Infinity, function(c){ var b=rnd.nextInt(c-1)+1; var L=rndExpr(b,0), R=rndExpr(c-b,0); return bin(L,R,'^',0,function(x,y){return (x^y)|0;}); } ],
+			[ 3, 2, Infinity, function(c){ var b=rnd.nextInt(c-1)+1; var L=rndExpr(b,3), R=rndExpr(c-b,3); return mul(L,R); } ],
+		];
 		var opFrom = (allowLength ? 0 : 1);
 		var opCount = OPS.length - (allowMultiplication ? 0 : 1) - (allowLength ? 0 : 1);
-
-		function rndExpr(c, prec) {
-			if (DEBUG) assert(c > 0, "c > 0");
-			var op;
-			do {
-				op = OPS[opFrom + rnd.nextInt(opCount)];
-			} while (c < op[1] || c > op[2]);
-			var s = op[3](c);
-			return (!compact || op[0] < prec ? '(' + s + ')' : s);
+		function rndExpr(c, prec){
+			if (DEBUG) assert(c>0, 'c>0');
+			var op; do { op = OPS[opFrom + rnd.nextInt(opCount)]; } while (c < op[1] || c > op[2]);
+			return op[3](c);
 		}
-
-		return rndExpr(complexity, 0);
+		var root = rndExpr(complexity, 0);
+		return { c: root.c, js: root.js, fn: function(n,w){ return root.fn(n,w)|0; } };
 	}
 
 	var tried = [ ];
@@ -315,17 +305,22 @@ function QuickHashGen(strings, minTableSize, maxTableSize, zeroTerminated, allow
 
 		for (var i = 0; i < iterations; ++i) {
 			var prngCopy = globalPRNG.clone();
-			var expr = generateRandomExpression(globalPRNG, complexity, maxTableSize - 1, false, false);
+			var exprObj = generateRandomExpression(globalPRNG, complexity, maxTableSize - 1, false, false);
+			var expr = exprObj.js;
 			if (complexity >= 4 || !(expr in tried[complexity])) {
 				if (complexity < 4) {
 					tried[complexity][expr] = true;
 				}
+				var func;
+				if (useEvalEngine) {
+					try { func = eval('(function(n, w){return ' + expr + ';})'); }
+					catch (_) { continue; }
+				} else {
+					func = exprObj.fn;
+				}
+
 				++triedCounter;
 
-                                var func = useEvalEngine
-                                        ? eval('(function(n, w){return ' + expr + ';})')
-                                        : new Function('n', 'w', 'return ' + expr + ';');
-				
 				for (var j = 0; j < stringsCount; ++j) {
 					hashes[j] = func(strings[j].length, stringChars[j]);
 				}
@@ -366,7 +361,7 @@ function QuickHashGen(strings, minTableSize, maxTableSize, zeroTerminated, allow
 	};
 
 	this.generateCOutput = function(template, foundSolution) {
-		var cExpression = generateRandomExpression(foundSolution.prng.clone(), foundSolution.complexity, maxTableSize - 1, true, true);
+		var cExpression = generateRandomExpression(foundSolution.prng.clone(), foundSolution.complexity, maxTableSize - 1, true, true).c;
 
 		cExpression = '(' + cExpression + ') & ' + (foundSolution.table.length - 1);
 
