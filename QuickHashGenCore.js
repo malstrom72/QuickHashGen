@@ -293,7 +293,7 @@ function QuickHashGen(strings, minTableSize, maxTableSize, zeroTerminated, allow
                                return {prec:1, c:c, js:j, fn:function(n,w){ var v=a.fn(n,w)|0; return (v<<shamt)|0; }};
                        } else {
                                j = wrapJ(a,1)+' >>> '+shamt;
-                               c = wrapC(a,1)+' >> '+shamt;
+                               c = '(0u + '+wrapC(a,1)+') >> '+shamt;
                                return {prec:1, c:c, js:j, fn:function(n,w){ var v=a.fn(n,w)|0; return (v>>>shamt)|0; }};
                        }
                }

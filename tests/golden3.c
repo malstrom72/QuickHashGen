@@ -26,6 +26,6 @@ static int lookup(int n /* string length */, const char* s /* string (zero termi
 	};
 	const unsigned char* p = (const unsigned char*) s;
 	if (n < 5 || n > 40) return -1;
-	int stringIndex = HASH_TABLE[(((0u + (p[2] ^ p[4]) - p[1]) << 5) + ((0u + ((p[0] ^ (39 < n ? p[39] : 0)) * 100u + n - n - (p[3] - (n >> 20))) * (n + 90u - p[5]) * (p[2] ^ 191u)) << 6 >> 10)) & 255u];
+	int stringIndex = HASH_TABLE[(((0u + (p[2] ^ p[4]) - p[1]) << 5) + ((0u + (0u + ((p[0] ^ (39 < n ? p[39] : 0)) * 100u + n - n - (p[3] - ((0u + n) >> 20))) * (n + 90u - p[5]) * (p[2] ^ 191u)) << 6) >> 10)) & 255u];
 	return (stringIndex >= 0 && strcmp(s, STRINGS[stringIndex]) == 0) ? stringIndex : -1;
 }
