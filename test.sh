@@ -2,6 +2,8 @@
 set -e
 
 node QuickHashGenCLI.js --seed 1 --tests 100 tests/input1.txt > tests/out1.c
+# verify option handling
+node QuickHashGenCLI.js --seed 1 --tests 100 --force-eval --eval-test tests/input1.txt > tests/out1_eval.c
 node QuickHashGenCLI.js --seed 123 --tests 100 tests/input2.txt > tests/out2.c
 node QuickHashGenCLI.js --seed 42 --tests 50000 tests/input3.txt > tests/out3.c
 node QuickHashGenCLI.js --seed 7 --tests 1000 tests/input4.txt > tests/out4.c
@@ -10,8 +12,9 @@ node QuickHashGenCLI.js --seed 13 --tests 100000 tests/input6.txt > tests/out6.c
 node QuickHashGenCLI.js --seed 17 --tests 500 tests/input7.txt > tests/out7.c
 node QuickHashGenCLI.js --seed 19 --tests 2000 tests/input8.txt > tests/out8.c
 
+diff -u tests/out1.c tests/out1_eval.c
 diff -u tests/golden1.c tests/out1.c
-rm tests/out1.c
+rm tests/out1.c tests/out1_eval.c
 
 diff -u tests/golden2.c tests/out2.c
 rm tests/out2.c
