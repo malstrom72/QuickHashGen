@@ -279,12 +279,23 @@ function QuickHashGen(strings, minTableSize, maxTableSize, zeroTerminated, allow
                        var j = jLeft+' '+op+' '+jRight;
                        return {prec:prec, c:c, js:j, fn:function(n,w){ return evalFn(a.fn(n,w), b.fn(n,w)); }};
                }
+               // Shifts in the generated expressions need to behave identically
+               // in C and JavaScript.  Right shifts in particular must be
+               // logical, because the C code operates on unsigned values.
+               // Using JavaScript's arithmetic ">>" caused discrepancies
+               // between the JS verification and the generated C program for
+               // certain inputs.
                function sh(a,dir,shamt){
-                       var j = wrapJ(a,1)+' '+dir+' '+shamt;
-                       var c = (dir==='<<')
-                               ? '(0u + '+wrapC(a,1)+') << '+shamt
-                               : wrapC(a,1)+' >> '+shamt;
-                       return {prec:1, c:c, js:j, fn:function(n,w){ var v=a.fn(n,w)|0; return (dir==='<<' ? (v<<shamt) : (v>>shamt))|0; }};
+                       var j, c;
+                       if (dir === '<<') {
+                               j = wrapJ(a,1)+' << '+shamt;
+                               c = '(0u + '+wrapC(a,1)+') << '+shamt;
+                               return {prec:1, c:c, js:j, fn:function(n,w){ var v=a.fn(n,w)|0; return (v<<shamt)|0; }};
+                       } else {
+                               j = wrapJ(a,1)+' >>> '+shamt;
+                               c = wrapC(a,1)+' >> '+shamt;
+                               return {prec:1, c:c, js:j, fn:function(n,w){ var v=a.fn(n,w)|0; return (v>>>shamt)|0; }};
+                       }
                }
                function mul(a,b){
                        var c = wrapC(a,3)+' * '+wrapC(b,3);
