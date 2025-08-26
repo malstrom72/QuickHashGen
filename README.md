@@ -149,11 +149,14 @@ class for programmatic integration:
 
 * **`QuickHashGen`** – the core search engine. The constructor accepts
   `(strings, minTableSize, maxTableSize, zeroTerminated,
-  allowMultiplication, allowLength, useEvalEngine=false)`.
-  Methods include:
-  * `search(complexity, iterations)` – explore random expressions and return
-    the first collision-free solution or `null`.
-  * `getTestedCount()` – total number of expressions evaluated so far.
+  allowMultiplication, allowLength, useEvalEngine=false, seed0?, seed1?)`.
+  If `seed0` is omitted the PRNG is seeded randomly; providing `seed0`
+  (and optionally `seed1`) yields deterministic output.
+    Methods include:
+    * `search(complexity, iterations)` – explore random expressions and return
+      the first collision-free solution or `null`.
+    * `getTestedCount()` – total number of expressions evaluated so far.
+    * `randomInt(max)` – draw a pseudo-random integer in `[0, max)`.
     * `generateCExpression(solution)` – build a C hash expression string.
     * `generateJSExpression(solution)` – build a JavaScript hash expression string.
     * `generateJSEvaluator(solution)` – build a CSP‑safe evaluator function.
@@ -168,8 +171,8 @@ class for programmatic integration:
   string.
 * **`parseCString`** / **`escapeCString`** – convert between C‑style quoted
   strings and raw JavaScript strings.
-* **`XorshiftPRNG2x32`** and **`globalPRNG`** – deterministic pseudo‑random
-  number generators used during the search.
+* **`XorshiftPRNG2x32`** – deterministic pseudo‑random number generator used
+  during the search.
 
 ## Browser interface
 

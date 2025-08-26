@@ -649,8 +649,8 @@ function intervalFunction() {
 		if (theHashMaker !== null) {
 			var timeOut = Date.now() + 100;
 			while (Date.now() - timeOut < 0) {
-				var complexity =
-					globalPRNG.nextInt(best === null ? 32 : best.complexity) + 1;
+                                var complexity =
+                                        theHashMaker.randomInt(best === null ? 32 : best.complexity) + 1;
 				var iters = Math.max(200 / strings.length, 1);
 				var found = theHashMaker.search(complexity, iters);
 				if (found !== null) {
