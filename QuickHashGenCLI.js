@@ -123,7 +123,8 @@ if (opts.evalTest) {
 }
 
 if (opts.bench) {
-    let expr = qh.generateCOutput("${hashExpression}", best).trim();
+    let evalObj = qh.generateJSEvaluator(best);
+    let expr = evalObj.expr;
     let sample = strings[0];
     let n = sample.length;
     let arrLen = opts.requireZeroTermination ? (n + 1) : n;
@@ -133,12 +134,25 @@ if (opts.bench) {
         if (c >= 128) c -= 256;
         arr[i] = c;
     }
-    const ITERS = 100000;
-    let fnEval = eval('(function(n,s){return ' + expr + ';})');
+    let fnEval = eval('(function(n,w){return ' + expr + ';})');
+    let fnFunc = evalObj.fn;
+    let ITERS = 100000;
+    while (true) {
+        let t0 = Date.now();
+        for (let i = 0; i < ITERS; ++i) fnEval(n, arr);
+        let t = Date.now() - t0;
+        if (t >= 250) break;
+        ITERS *= 2;
+    }
+    // warm up functional engine
+    for (let i = 0; i < ITERS; ++i) fnFunc(n, arr);
     let t0 = Date.now();
     for (let i = 0; i < ITERS; ++i) fnEval(n, arr);
     let tEval = Date.now() - t0;
-    console.error('Benchmark (' + ITERS + ' iterations): eval=' + tEval + 'ms');
+    t0 = Date.now();
+    for (let i = 0; i < ITERS; ++i) fnFunc(n, arr);
+    let tFunc = Date.now() - t0;
+    console.error('Benchmark (' + ITERS + ' iterations): eval=' + tEval + 'ms func=' + tFunc + 'ms');
 }
 
 const ZERO_TEMPLATE = '/* Built with QuickHashGen CLI */\n'

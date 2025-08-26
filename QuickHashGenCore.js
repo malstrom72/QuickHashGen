@@ -360,10 +360,10 @@ function QuickHashGen(strings, minTableSize, maxTableSize, zeroTerminated, allow
 		return triedCounter;
 	};
 
-	this.generateCOutput = function(template, foundSolution) {
-		var cExpression = generateRandomExpression(foundSolution.prng.clone(), foundSolution.complexity, maxTableSize - 1, true, true).c;
+        this.generateCOutput = function(template, foundSolution) {
+                var cExpression = generateRandomExpression(foundSolution.prng.clone(), foundSolution.complexity, maxTableSize - 1, true, true).c;
 
-		cExpression = '(' + cExpression + ') & ' + (foundSolution.table.length - 1);
+                cExpression = '(' + cExpression + ') & ' + (foundSolution.table.length - 1);
 
 		var replaceMap = {
 			'minLength': function() { return minLength; },
@@ -392,8 +392,19 @@ function QuickHashGen(strings, minTableSize, maxTableSize, zeroTerminated, allow
 			}
 		}
 
-		return output;
-	};
+                return output;
+        };
+
+        // Generate JS expression and CSP-safe function for benchmarking.
+        this.generateJSEvaluator = function(foundSolution) {
+                var exprObj = generateRandomExpression(foundSolution.prng.clone(), foundSolution.complexity, maxTableSize - 1, false, false);
+                var mask = foundSolution.table.length - 1;
+                var jsExpr = '(' + exprObj.js + ') & ' + mask;
+                return {
+                        expr: jsExpr,
+                        fn: function(n, w) { return exprObj.fn(n, w) & mask; }
+                };
+        };
 
 }
 
