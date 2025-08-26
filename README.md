@@ -140,6 +140,30 @@ const best = gen.search(10, 1000);
 console.log(gen.generateCOutput('${hashExpression}', best));
 ```
 
+### Core API
+
+`QuickHashGenCore.js` exports a handful of helpers and the `QuickHashGen`
+class for programmatic integration:
+
+* **`QuickHashGen`** – the core search engine. The constructor accepts
+  `(strings, minTableSize, maxTableSize, zeroTerminated,
+  allowMultiplication, allowLength, useEvalEngine=false)`.
+  Methods include:
+  * `search(complexity, iterations)` – explore random expressions and return
+    the first collision-free solution or `null`.
+  * `getTestedCount()` – total number of expressions evaluated so far.
+  * `generateCOutput(template, solution)` – populate a C template using a
+    solution object returned by `search`.
+* **`parseQuickHashGenInput(text)`** – parse newline or C‑style quoted
+  strings into an array, mirroring CLI input handling.
+* **`stringListToC(strings, columns, prefix)`** and
+  **`numberListToC(numbers, columns, base, prefix)`** – format arrays as C
+  initializers.
+* **`parseCString`** / **`escapeCString`** – convert between C‑style quoted
+  strings and raw JavaScript strings.
+* **`XorshiftPRNG2x32`** and **`globalPRNG`** – deterministic pseudo‑random
+  number generators used during the search.
+
 ## Browser interface
 
 `QuickHashGen.html` offers an interactive front end. The single text area
