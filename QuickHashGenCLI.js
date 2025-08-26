@@ -11,8 +11,13 @@ function printUsage() {
     console.error('  --no-multiplications     disallow multiplications');
     console.error('  --no-length              disallow use of n (string length)');
     console.error('  --no-zero-termination    allow non-zero-terminated strings');
-    console.error('  --eval-test              verify result using eval');
-    console.error('  --force-eval             prefer eval engine (no-op)');
+    console.error('  --eval-test              verify result using chosen engine');
+    console.error('  --force-eval             use eval engine (if available)');
+    console.error('  --bench                  benchmark eval vs Function engines');
+    console.error('');
+    console.error('Strings are read from [input-file] or stdin. Each line may be');
+    console.error('plain text or one or more C-style quoted strings separated by');
+    console.error('commas or whitespace.');
 }
 
 let args = process.argv.slice(2);
@@ -22,7 +27,8 @@ let opts = {
     allowLength: true,
     requireZeroTermination: true,
     evalTest: false,
-    forceEval: false
+    forceEval: false,
+    bench: false
 };
 let inputFile = null;
 for (let i = 0; i < args.length; ++i) {
@@ -38,7 +44,9 @@ for (let i = 0; i < args.length; ++i) {
     } else if (a === '--eval-test') {
         opts.evalTest = true;
     } else if (a === '--force-eval') {
-        opts.forceEval = true; // currently unused
+        opts.forceEval = true;
+    } else if (a === '--bench') {
+        opts.bench = true;
     } else if (a[0] === '-') {
         printUsage();
         process.exit(1);
@@ -64,7 +72,7 @@ let minSize = 1;
 while (strings.length > minSize) minSize <<= 1;
 let maxSize = minSize * 8;
 
-let qh = new core.QuickHashGen(strings, minSize, maxSize, opts.requireZeroTermination, opts.allowMultiplications, opts.allowLength);
+let qh = new core.QuickHashGen(strings, minSize, maxSize, opts.requireZeroTermination, opts.allowMultiplications, opts.allowLength, opts.forceEval);
 let best = null;
 
 while (qh.getTestedCount() < opts.tests) {
@@ -85,7 +93,9 @@ if (!best) {
 
 if (opts.evalTest) {
     let expr = qh.generateCOutput("${hashExpression}", best).trim();
-    let fn = new Function('n','s','return ' + expr + ';');
+    let fn = opts.forceEval
+        ? eval('(function(n,s){return ' + expr + ';})')
+        : new Function('n','s','return ' + expr + ';');
     let minLen = Infinity; for (let i = 0; i < strings.length; ++i) { let L = strings[i].length; if (L < minLen) minLen = L; }
     let padLen = opts.requireZeroTermination ? (minLen + 1) : minLen;
     for (let j = 0; j < strings.length; ++j) {
@@ -103,6 +113,29 @@ if (opts.evalTest) {
             process.exit(1);
         }
     }
+}
+
+if (opts.bench) {
+    let expr = qh.generateCOutput("${hashExpression}", best).trim();
+    let sample = strings[0];
+    let n = sample.length;
+    let arrLen = opts.requireZeroTermination ? (n + 1) : n;
+    let arr = new Array(arrLen);
+    for (let i = 0; i < arrLen; ++i) {
+        let c = (i < n ? sample.charCodeAt(i) : 0);
+        if (c >= 128) c -= 256;
+        arr[i] = c;
+    }
+    const ITERS = 100000;
+    let fnFunc = new Function('n','s','return ' + expr + ';');
+    let fnEval = eval('(function(n,s){return ' + expr + ';})');
+    let t0 = Date.now();
+    for (let i = 0; i < ITERS; ++i) fnFunc(n, arr);
+    let tFunc = Date.now() - t0;
+    t0 = Date.now();
+    for (let i = 0; i < ITERS; ++i) fnEval(n, arr);
+    let tEval = Date.now() - t0;
+    console.error('Benchmark (' + ITERS + ' iterations): Function=' + tFunc + 'ms, eval=' + tEval + 'ms');
 }
 
 const ZERO_TEMPLATE = '/* Built with QuickHashGen CLI */\n'

@@ -214,7 +214,7 @@ if (!("imul" in Math)) {
 	};
 }
 
-function QuickHashGen(strings, minTableSize, maxTableSize, zeroTerminated, allowMultiplication, allowLength) {
+function QuickHashGen(strings, minTableSize, maxTableSize, zeroTerminated, allowMultiplication, allowLength, useEvalEngine) {
 	var stringSet = { };
 
 	var maxLength = 0;
@@ -242,7 +242,9 @@ function QuickHashGen(strings, minTableSize, maxTableSize, zeroTerminated, allow
 		stringChars[i] = a;
 	}
 
-	var safeLength = (zeroTerminated ? minLength + 1 : minLength);
+        var safeLength = (zeroTerminated ? minLength + 1 : minLength);
+
+        if (typeof useEvalEngine === "undefined") useEvalEngine = false;
 
 	function generateRandomExpression(rnd, complexity, constantMask, cpp, compact) {
 
@@ -320,7 +322,9 @@ function QuickHashGen(strings, minTableSize, maxTableSize, zeroTerminated, allow
 				}
 				++triedCounter;
 
-				var func = eval("(function(n, w) { return " + expr + "; })");
+                                var func = useEvalEngine
+                                        ? eval('(function(n, w){return ' + expr + ';})')
+                                        : new Function('n', 'w', 'return ' + expr + ';');
 				
 				for (var j = 0; j < stringsCount; ++j) {
 					hashes[j] = func(strings[j].length, stringChars[j]);
