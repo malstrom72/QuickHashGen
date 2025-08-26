@@ -11,6 +11,7 @@ node QuickHashGenCLI.js --seed 11 --tests 2000 tests/input5.txt > tests/out5.c
 node QuickHashGenCLI.js --seed 13 --tests 100000 tests/input6.txt > tests/out6.c
 node QuickHashGenCLI.js --seed 17 --tests 500 tests/input7.txt > tests/out7.c
 node QuickHashGenCLI.js --seed 19 --tests 2000 tests/input8.txt > tests/out8.c
+node QuickHashGenCLI.js --seed 23 --tests 100000 tests/input9.txt > tests/out9.c
 
 diff -u tests/out1.c tests/out1_eval.c
 diff -u tests/golden1.c tests/out1.c
@@ -36,5 +37,8 @@ rm tests/out7.c
 
 diff -u tests/golden8.c tests/out8.c
 rm tests/out8.c
+
+diff -u tests/golden9.c tests/out9.c
+rm tests/out9.c
 
 echo "All tests passed."
