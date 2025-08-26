@@ -43,7 +43,8 @@ line
 			// use unsigned chars and unsigned arithmitic (guaranteed bit-representation and wrapping) only
 			// match start of string (which is what I begun on with "allowLength")
 
-		    var ZERO_TERMINATED_TEMPLATE = '/* Built with http://nuedge.net/StringHashMaker */\n' +
+                    var ZERO_TERMINATED_TEMPLATE = '/* Built with QuickHashGen */\n' +
+                    '// Seed: ${seed}\n' +
                     'static int <<findSomething>>(int n /* string length */, const char* s /* string (zero terminated) */) {\n' +
                     '	static const char* STRINGS[${stringCount}] = {\n' +
                     '		${stringList}\n' +
@@ -57,7 +58,8 @@ line
                     '	return (stringIndex >= 0 && strcmp(s, STRINGS[stringIndex]) == 0) ? stringIndex : -1;\n' +
                     '}';
 
-            var NON_ZERO_TERMINATED_TEMPLATE = '/* Built with http://nuedge.net/StringHashMaker */\n' +
+            var NON_ZERO_TERMINATED_TEMPLATE = '/* Built with QuickHashGen */\n' +
+                    '// Seed: ${seed}\n' +
                     'static int <<findSomething>>(int n /* string length */, const char* s /* string (zero termination not required) */) {\n' +
                     '	static const char* STRINGS[${stringCount}] = {\n' +
                     '		${stringList}\n' +

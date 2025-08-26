@@ -1,4 +1,5 @@
 /* Built with QuickHashGen CLI */
+// Seed: 11
 static int lookup(int n /* string length */, const char* s /* string (zero terminated) */) {
 	static const char* STRINGS[100] = {
 		"item000", "item001", "item002", "item003", "item004", "item005", "item006", 

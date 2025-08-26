@@ -321,7 +321,8 @@ line
 	}
 
 	// ===== Output templates =====
-        var ZERO_TERMINATED_TEMPLATE = '/* Built with http://nuedge.net/StringHashMaker */\n' +
+        var ZERO_TERMINATED_TEMPLATE = '/* Built with QuickHashGen */\n' +
+                '// Seed: ${seed}\n' +
                 'static int <<findSomething>>(int n /* string length */, const char* s /* string (zero terminated) */) {\n' +
                 '\tstatic const char* STRINGS[${stringCount}] = {\n' +
                 '\t\t${stringList}\n' +
@@ -336,7 +337,8 @@ line
                 '\treturn (stringIndex >= 0 && strcmp(s, STRINGS[stringIndex]) == 0) ? stringIndex : -1;\n' +
                 '}';
 
-        var NON_ZERO_TERMINATED_TEMPLATE = '/* Built with http://nuedge.net/StringHashMaker */\n' +
+        var NON_ZERO_TERMINATED_TEMPLATE = '/* Built with QuickHashGen */\n' +
+                '// Seed: ${seed}\n' +
                 'static int <<findSomething>>(int n /* string length */, const char* s /* string (zero termination not required) */) {\n' +
                 '\tstatic const char* STRINGS[${stringCount}] = {\n' +
                 '\t\t${stringList}\n' +
