@@ -154,11 +154,15 @@ class for programmatic integration:
   * `getTestedCount()` – total number of expressions evaluated so far.
   * `generateCOutput(template, solution)` – populate a C template using a
     solution object returned by `search`.
+  * `generateJSEvaluator(solution)` – build a JavaScript hash expression and
+    evaluator function for benchmarking or integration.
 * **`parseQuickHashGenInput(text)`** – parse newline or C‑style quoted
   strings into an array, mirroring CLI input handling.
 * **`stringListToC(strings, columns, prefix)`** and
   **`numberListToC(numbers, columns, base, prefix)`** – format arrays as C
   initializers.
+* **`toHex(i, length)`** – format a number as a zero-padded hexadecimal
+  string.
 * **`parseCString`** / **`escapeCString`** – convert between C‑style quoted
   strings and raw JavaScript strings.
 * **`XorshiftPRNG2x32`** and **`globalPRNG`** – deterministic pseudo‑random
