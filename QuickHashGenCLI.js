@@ -13,7 +13,7 @@ function printUsage() {
     console.error('  --no-zero-termination    allow non-zero-terminated strings');
     console.error('  --eval-test              verify result with eval engine');
     console.error('  --force-eval             use eval engine (if available)');
-    console.error('  --bench                  benchmark eval engine');
+    console.error('  --bench                  benchmark solution generation speed');
     console.error('  --seed N                seed the random generator');
     console.error('');
     console.error('Strings are read from [input-file] or stdin. Each line may be');
@@ -123,37 +123,30 @@ if (opts.evalTest) {
 }
 
 if (opts.bench) {
-    let expr = qh.generateJSExpression(best);
-    let fnFunc = qh.generateJSEvaluator(best);
-    let sample = strings[0];
-    let n = sample.length;
-    let arrLen = opts.requireZeroTermination ? (n + 1) : n;
-    let arr = new Array(arrLen);
-    for (let i = 0; i < arrLen; ++i) {
-        let c = (i < n ? sample.charCodeAt(i) : 0);
-        if (c >= 128) c -= 256;
-        arr[i] = c;
+    function benchGeneration(useEval) {
+        const seed = 123456789;
+        const saved = core.globalPRNG;
+        core.globalPRNG = new core.XorshiftPRNG2x32(seed);
+        let qhBench = new core.QuickHashGen(strings, minSize, maxSize, opts.requireZeroTermination, opts.allowMultiplications, opts.allowLength, useEval);
+        let bestBench = null;
+        const start = process.hrtime.bigint();
+        while (qhBench.getTestedCount() < opts.tests) {
+            let complexity = core.globalPRNG.nextInt(bestBench === null ? 32 : bestBench.complexity) + 1;
+            let remaining = opts.tests - qhBench.getTestedCount();
+            let iters = Math.max(1, Math.min(remaining, Math.floor(200 / strings.length)));
+            let found = qhBench.search(complexity, iters);
+            if (found && (bestBench === null || found.complexity < bestBench.complexity || (found.complexity === bestBench.complexity && found.table.length < bestBench.table.length))) {
+                bestBench = found;
+                if (bestBench.complexity === 1) break;
+            }
+        }
+        const elapsed = Number(process.hrtime.bigint() - start) / 1e6;
+        core.globalPRNG = saved;
+        return elapsed;
     }
-    let fnEval = eval('(function(n,w){return ' + expr + ';})');
-    let ITERS = 100000;
-    const MAX_ITERS = 10000000;
-    const TARGET_MS = 100;
-    while (ITERS < MAX_ITERS) {
-        let t0 = Date.now();
-        for (let i = 0; i < ITERS; ++i) fnEval(n, arr);
-        let t = Date.now() - t0;
-        if (t >= TARGET_MS) break;
-        ITERS *= 2;
-    }
-    // warm up functional engine
-    for (let i = 0; i < ITERS; ++i) fnFunc(n, arr);
-    let t0 = Date.now();
-    for (let i = 0; i < ITERS; ++i) fnEval(n, arr);
-    let tEval = Date.now() - t0;
-    t0 = Date.now();
-    for (let i = 0; i < ITERS; ++i) fnFunc(n, arr);
-    let tFunc = Date.now() - t0;
-    console.error('Benchmark (' + ITERS + ' iterations): eval=' + tEval + 'ms func=' + tFunc + 'ms');
+    let tFunc = benchGeneration(false);
+    let tEval = benchGeneration(true);
+    console.error('Generation benchmark (' + opts.tests + ' tests): func=' + tFunc.toFixed(2) + 'ms eval=' + tEval.toFixed(2) + 'ms');
 }
 
 const ZERO_TEMPLATE = '/* Built with QuickHashGen CLI */\n'
