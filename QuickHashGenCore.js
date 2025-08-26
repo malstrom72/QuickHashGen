@@ -311,13 +311,15 @@ function QuickHashGen(strings, minTableSize, maxTableSize, zeroTerminated, allow
 				if (complexity < 4) {
 					tried[complexity][expr] = true;
 				}
-				++triedCounter;
-
-				var func = null;
+				var func;
 				if (useEvalEngine) {
-					try { func = eval('(function(n, w){return ' + expr + ';})'); } catch (_) { func = null; }
+					try { func = eval('(function(n, w){return ' + expr + ';})'); }
+					catch (_) { continue; }
+				} else {
+					func = exprObj.fn;
 				}
-				if (!func) func = exprObj.fn;
+
+				++triedCounter;
 
 				for (var j = 0; j < stringsCount; ++j) {
 					hashes[j] = func(strings[j].length, stringChars[j]);

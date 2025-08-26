@@ -11,9 +11,9 @@ function printUsage() {
     console.error('  --no-multiplications     disallow multiplications');
     console.error('  --no-length              disallow use of n (string length)');
     console.error('  --no-zero-termination    allow non-zero-terminated strings');
-    console.error('  --eval-test              verify result using chosen engine');
+    console.error('  --eval-test              verify result with eval engine');
     console.error('  --force-eval             use eval engine (if available)');
-    console.error('  --bench                  benchmark eval vs Function engines');
+    console.error('  --bench                  benchmark eval engine');
     console.error('  --seed N                seed the random generator');
     console.error('');
     console.error('Strings are read from [input-file] or stdin. Each line may be');
