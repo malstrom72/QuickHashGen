@@ -136,7 +136,9 @@ const maxSize = minSize * 8;
 const gen = new qh.QuickHashGen(strings, minSize, maxSize,
                                  true  /* zero-terminated */,
                                  true  /* allow multiplications */,
-                                 true  /* allow length */);
+                                 true  /* allow length */,
+                                 false /* use eval engine */,
+                                 false /* eval self-test */);
 const best = gen.search(10, 1000);
 const cExpr = gen.generateCExpression(best);
 console.log(cExpr);
@@ -149,7 +151,8 @@ class for programmatic integration:
 
 * **`QuickHashGen`** – the core search engine. The constructor accepts
   `(strings, minTableSize, maxTableSize, zeroTerminated,
-  allowMultiplication, allowLength, useEvalEngine=false, seed0?, seed1?)`.
+  allowMultiplication, allowLength, useEvalEngine=false,
+  evalTest=false, seed0?, seed1?)`.
   If `seed0` is omitted the PRNG is seeded randomly; providing `seed0`
   (and optionally `seed1`) yields deterministic output.
     Methods include:

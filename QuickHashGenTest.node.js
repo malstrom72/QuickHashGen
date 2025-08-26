@@ -73,7 +73,7 @@ var maxSize = minSize * MAX_SIZE_MULTIPLIER;
 // resulting in nondeterministic failures when running testLoopNode.sh.
 var hashSeed0 = rnd.nextInt32();
 var hashSeed1 = rnd.nextInt32();
-var theHashMaker = new QuickHashGen(strings, minSize, maxSize, true, true, true,
+var theHashMaker = new QuickHashGen(strings, minSize, maxSize, true, true, true, false, false,
         hashSeed0, hashSeed1);
 
 var found = null;

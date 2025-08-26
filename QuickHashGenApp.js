@@ -191,12 +191,6 @@ function detectEvalAllowed(){
     return false;
   }
 }
-// ---- Eval-based verification (expression generated for C) ----
-function _baseStatusText() {
-	var t = elements.testStatus.textContent || "";
-	var p = t.indexOf(" | ");
-	return p >= 0 ? t.slice(0, p) : t;
-}
 function stopAndReport(header, details) {
 	try {
 		isRunning = false;
@@ -216,259 +210,20 @@ function stopAndReport(header, details) {
 	} catch (_) {}
 }
 function updateModeLabel() {
-	try {
-		var base = elements.testStatus.textContent || "";
-		var core = base.split(" | ")[0];
-		var mode = ENGINE_USE_EVAL
-			? "eval"
-			: EVAL_ALLOWED
-				? "csp-safe (manual)"
-				: "csp-safe (CSP)";
-		elements.testStatus.textContent =
-			core + (core ? " | " : "") + "Mode: " + mode;
-	} catch (_) {}
-}
-function verifyByEval(found) {
-	if (!elements.evalTest || !elements.evalTest.checked) return; // disabled
-	var expr = theHashMaker.generateCOutput("${hashExpression}", found).trim();
-	var fn;
-	try {
-		fn = eval("(function(n,s){return " + expr + ";})");
-	} catch (e) {
-		elements.testStatus.textContent =
-			_baseStatusText() +
-			" | Eval: compile error: " +
-			(e && e.message ? e.message : String(e));
-		stopAndReport("Self-tests: Eval compile error", {
-			expr: expr,
-			error: e && e.stack ? e.stack : String(e),
-		});
-		return;
-	}
-	var minLen = Infinity;
-	for (var i = 0; i < strings.length; ++i) {
-		var L = strings[i].length;
-		if (L < minLen) minLen = L;
-	}
-	if (!isFinite(minLen)) {
-		elements.testStatus.textContent = _baseStatusText() + " | Eval: no strings";
-		return;
-	}
-	var padLen = elements.requireZeroTermination.checked ? minLen + 1 : minLen;
-	var mismatches = 0,
-		firstMsg = "";
-	var mod = found.table.length;
-	var details = [];
-	for (var j = 0; j < strings.length; ++j) {
-		var str = strings[j],
-			n = str.length;
-		var sArr = new Array(Math.max(padLen, n));
-		for (var k = 0; k < sArr.length; ++k) {
-			var c = k < n ? str.charCodeAt(k) : 0;
-			if (c >= 128) c -= 256;
-			sArr[k] = c;
-		}
-		var got;
-		try {
-			got = fn(n, sArr);
-		} catch (e2) {
-			mismatches++;
-			if (!firstMsg)
-				firstMsg =
-					"runtime error on #" +
-					j +
-					": " +
-					(e2 && e2.message ? e2.message : String(e2));
-			if (details.length < 20)
-				details.push({
-					index: j,
-					string: str,
-					n: n,
-					error: e2 && e2.stack ? e2.stack : String(e2),
-				});
-			continue;
-		}
-		var idxEval = got & (mod - 1);
-		var idxFunc = found.hashes[j] & (mod - 1);
-		if ((idxEval | 0) !== (idxFunc | 0) || found.table[idxEval] !== j) {
-			mismatches++;
-			if (!firstMsg)
-				firstMsg =
-					"mismatch on #" +
-					j +
-					" (" +
-					escapeCString(str) +
-					"): eval=" +
-					idxEval +
-					", func=" +
-					idxFunc +
-					", table[" +
-					idxEval +
-					"]=" +
-					found.table[idxEval];
-			if (details.length < 20)
-				details.push({
-					index: j,
-					string: str,
-					n: n,
-					got: got,
-					idxEval: idxEval | 0,
-					idxFunc: idxFunc | 0,
-					tableAt: found.table[idxEval],
-				});
-		}
-	}
-	elements.testStatus.textContent =
-		_baseStatusText() +
-		(mismatches === 0
-			? " | Eval: OK (" + strings.length + " checked)"
-			: " | Eval: " +
-				mismatches +
-				" mismatch" +
-				(mismatches > 1 ? "es" : "") +
-				(firstMsg ? " — " + firstMsg : ""));
-	if (mismatches > 0) {
-		stopAndReport("Self-tests: Eval mismatch", {
-			expr: expr,
-			tableSize: found.table.length,
-			details: details,
-		});
-	}
-}
-// ---- Editor-line verification (checks the actual text in editor) ----
-function extractEditorHashExpr(code) {
-	var useStart = code.indexOf("int stringIndex");
-	var startIdx =
-		useStart >= 0
-			? code.indexOf("HASH_TABLE[", useStart)
-			: code.lastIndexOf("HASH_TABLE[");
-	if (startIdx < 0) return null;
-	var bOpen = code.indexOf("[", startIdx);
-	var bClose = findMatchingSquare(code, bOpen);
-	if (bOpen < 0 || bClose <= bOpen) return null;
-	return code.slice(bOpen + 1, bClose);
-}
-function verifyEditorLine(found) {
-	if (!elements.evalTest || !elements.evalTest.checked) return;
-	var code = elements.editor.value || "";
-	var expr = extractEditorHashExpr(code);
-	if (!expr) {
-		elements.testStatus.textContent =
-			_baseStatusText() + " | Editor: expr not found";
-		stopAndReport("Editor: expr not found", {
-			codeSample: code.slice(
-				Math.max(0, code.indexOf("int stringIndex") - 80),
-				Math.min(code.length, code.indexOf("int stringIndex") + 120),
-			),
-		});
-		return;
-	}
-	var fn;
-	try {
-		fn = eval("(function(n,s){return (" + expr + ");})");
-	} catch (e) {
-		elements.testStatus.textContent =
-			_baseStatusText() +
-			" | Editor: compile error: " +
-			(e && e.message ? e.message : String(e));
-		stopAndReport("Editor: compile error", {
-			expr: expr,
-			error: e && e.stack ? e.stack : String(e),
-		});
-		return;
-	}
-	var minLen = Infinity;
-	for (var i = 0; i < strings.length; ++i) {
-		var L = strings[i].length;
-		if (L < minLen) minLen = L;
-	}
-	if (!isFinite(minLen)) {
-		elements.testStatus.textContent =
-			_baseStatusText() + " | Editor: no strings";
-		return;
-	}
-	var padLen = elements.requireZeroTermination.checked ? minLen + 1 : minLen;
-	var mismatches = 0,
-		firstMsg = "";
-	var mod = found.table.length;
-	var details = [];
-	for (var j = 0; j < strings.length; ++j) {
-		var str = strings[j],
-			n = str.length;
-		var sArr = new Array(Math.max(padLen, n));
-		for (var k = 0; k < sArr.length; ++k) {
-			var c = k < n ? str.charCodeAt(k) : 0;
-			if (c >= 128) c -= 256;
-			sArr[k] = c;
-		}
-		var got;
-		try {
-			got = fn(n, sArr);
-		} catch (e2) {
-			mismatches++;
-			if (!firstMsg)
-				firstMsg =
-					"runtime error on #" +
-					j +
-					": " +
-					(e2 && e2.message ? e2.message : String(e2));
-			if (details.length < 20)
-				details.push({
-					index: j,
-					string: str,
-					n: n,
-					error: e2 && e2.stack ? e2.stack : String(e2),
-				});
-			continue;
-		}
-		var idxEval = got & (mod - 1);
-		var idxFunc = found.hashes[j] & (mod - 1);
-		if ((idxEval | 0) !== (idxFunc | 0) || found.table[idxEval] !== j) {
-			mismatches++;
-			if (!firstMsg)
-				firstMsg =
-					"mismatch on #" +
-					j +
-					" (" +
-					escapeCString(str) +
-					"): editor=" +
-					idxEval +
-					", func=" +
-					idxFunc +
-					", table[" +
-					idxEval +
-					"]=" +
-					found.table[idxEval];
-			if (details.length < 20)
-				details.push({
-					index: j,
-					string: str,
-					n: n,
-					got: got,
-					idxEditor: idxEval | 0,
-					idxFunc: idxFunc | 0,
-					tableAt: found.table[idxEval],
-				});
-		}
-	}
-	var prev = elements.testStatus.textContent || _baseStatusText();
-	var left = prev.split(" | ")[0];
-	elements.testStatus.textContent =
-		left +
-		(mismatches === 0
-			? " | Editor: OK (" + strings.length + " checked)"
-			: " | Editor: " +
-				mismatches +
-				" mismatch" +
-				(mismatches > 1 ? "es" : "") +
-				(firstMsg ? " — " + firstMsg : ""));
-	if (mismatches > 0) {
-		stopAndReport("Editor: mismatch", {
-			expr: expr,
-			tableSize: found.table.length,
-			details: details,
-		});
-	}
+        try {
+                var base = elements.testStatus.textContent || "";
+                var core = base.split(" | ")[0];
+                var mode = ENGINE_USE_EVAL
+                        ? "eval"
+                        : EVAL_ALLOWED
+                                ? "csp-safe (manual)"
+                                : "csp-safe (CSP)";
+                var text = core + (core ? " | " : "") + "Mode: " + mode;
+                if (best && best.evalInfo) {
+                        text += " | Eval: OK (" + best.evalInfo.checked + " checked)";
+                }
+                elements.testStatus.textContent = text;
+        } catch (_) {}
 }
 function applyBestToEditor(found) {
 	var code = elements.editor.value || "";
@@ -550,9 +305,10 @@ function resetSearch() {
 			maxSize,
 			elements.requireZeroTermination.checked,
 			elements.allowMultiplications.checked,
-			elements.allowLength.checked,
-			ENGINE_USE_EVAL,
-		);
+                        elements.allowLength.checked,
+                        ENGINE_USE_EVAL,
+                        elements.evalTest && elements.evalTest.checked,
+                );
 		elements.hashes.innerHTML = "";
 		elements.testedCount.innerHTML = "0";
 		elements.solutionsCount.innerHTML = "0";
@@ -620,27 +376,22 @@ function updateCodeMetadata() {
 	} catch (_) {}
 }
 function updateOutput() {
-	if (best !== null) {
-		try {
-			applyBestToEditor(best);
-		} catch (_) {}
-		try {
-			verifyByEval(best);
-		} catch (_) {}
-		try {
-			verifyEditorLine(best);
-		} catch (_) {}
-		var s = "";
-		for (var i = 0; i < strings.length; ++i)
-			s +=
-				escapeCString(strings[i]) +
-				" : " +
-				(best.hashes[i] & (best.table.length - 1)) +
-				" (" +
-				best.hashes[i] +
-				")\n";
-		elements.hashes.innerHTML = s;
-	} else elements.hashes.innerHTML = "";
+        if (best !== null) {
+                try {
+                        applyBestToEditor(best);
+                } catch (_) {}
+                var s = "";
+                for (var i = 0; i < strings.length; ++i)
+                        s +=
+                                escapeCString(strings[i]) +
+                                " : " +
+                                (best.hashes[i] & (best.table.length - 1)) +
+                                " (" +
+                                best.hashes[i] +
+                                ")\n";
+                elements.hashes.innerHTML = s;
+        } else elements.hashes.innerHTML = "";
+        updateModeLabel();
 }
 function intervalFunction() {
 	try {
@@ -763,12 +514,6 @@ function runSelfTests() {
 		var i = line.indexOf("[");
 		var j = findMatchingSquare(line, i);
 		if (j !== line.length - 2) throw new Error("mismatch " + j);
-	});
-	T("extract editor expr", function () {
-                var code = "int stringIndex = HASH_TABLE[(n ^ p[0]) & 15];";
-                var expr = extractEditorHashExpr(code);
-                if (!expr || expr.indexOf("(n ^ p[0]) & 15") < 0)
-                        throw new Error("extract failed: " + expr);
 	});
 	T("rewrite zero-term off/on", function () {
                 var code0 =

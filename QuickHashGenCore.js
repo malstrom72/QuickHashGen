@@ -213,7 +213,7 @@ if (!("imul" in Math)) {
 	};
 }
 
-function QuickHashGen(strings, minTableSize, maxTableSize, zeroTerminated, allowMultiplication, allowLength, useEvalEngine, seed0, seed1) {
+function QuickHashGen(strings, minTableSize, maxTableSize, zeroTerminated, allowMultiplication, allowLength, useEvalEngine, evalTest, seed0, seed1) {
         var stringSet = { };
 
         // Each QuickHashGen instance maintains its own PRNG to avoid global state.
@@ -254,7 +254,48 @@ function QuickHashGen(strings, minTableSize, maxTableSize, zeroTerminated, allow
 
 	var safeLength = (zeroTerminated ? minLength + 1 : minLength);
 
-	if (typeof useEvalEngine === "undefined") useEvalEngine = false;
+        if (typeof useEvalEngine === "undefined") useEvalEngine = false;
+        if (typeof evalTest === "undefined") evalTest = false;
+
+        function verifyEval(foundSolution) {
+                var r = buildExpression(foundSolution);
+                var expr = '(' + r.exprObj.js + ') & ' + r.mask;
+                var fn;
+                try {
+                        fn = eval('(function(n,w){return ' + expr + ';})');
+                } catch (e) {
+                        throw new Error('Eval compile error: ' + (e && e.message ? e.message : String(e)));
+                }
+                var minLen = Infinity;
+                for (var i = 0; i < strings.length; ++i) {
+                        var L = strings[i].length;
+                        if (L < minLen) minLen = L;
+                }
+                if (!isFinite(minLen)) return { checked: 0 };
+                var padLen = zeroTerminated ? (minLen + 1) : minLen;
+                var mod = foundSolution.table.length;
+                for (var j = 0; j < strings.length; ++j) {
+                        var str = strings[j];
+                        var n = str.length;
+                        var arr = new Array(Math.max(padLen, n));
+                        for (var k = 0; k < arr.length; ++k) {
+                                var c = (k < n ? str.charCodeAt(k) : 0);
+                                if (c >= 128) c -= 256;
+                                arr[k] = c;
+                        }
+                        var idx;
+                        try {
+                                idx = fn(n, arr) & (mod - 1);
+                        } catch (e2) {
+                                throw new Error('Eval runtime error on #' + j + ': ' + (e2 && e2.message ? e2.message : String(e2)));
+                        }
+                        var idxFunc = foundSolution.hashes[j] & (mod - 1);
+                        if (idx !== idxFunc || foundSolution.table[idx] !== j) {
+                                throw new Error('Eval mismatch on #' + j);
+                        }
+                }
+                return { checked: strings.length };
+        }
 
 	function generateRandomExpression(rnd, complexity, constantMask, cpp, compact) {
 		// Unified generator: builds a single AST that yields
@@ -382,16 +423,18 @@ function QuickHashGen(strings, minTableSize, maxTableSize, zeroTerminated, allow
 					}
 				}
 								
-				if (found) {
-					var table = new Array(tableSize);
-					for (var j = 0; j < tableSize; ++j) table[j] = -1;
-					for (var j = 0; j < stringsCount; ++j) {
-						var hash = func(strings[j].length, stringChars[j]) & (tableSize - 1);
-						if (DEBUG) assert(table[hash] === -1, "table[hash] === -1");
-						table[hash] = j;
-					}
-					return { "complexity":complexity, "prng":prngCopy, "table":table, "hashes":hashes };
-				}
+                                if (found) {
+                                        var table = new Array(tableSize);
+                                        for (var j = 0; j < tableSize; ++j) table[j] = -1;
+                                        for (var j = 0; j < stringsCount; ++j) {
+                                                var hash = func(strings[j].length, stringChars[j]) & (tableSize - 1);
+                                                if (DEBUG) assert(table[hash] === -1, "table[hash] === -1");
+                                                table[hash] = j;
+                                        }
+                                        var result = { "complexity":complexity, "prng":prngCopy, "table":table, "hashes":hashes };
+                                        if (evalTest) result.evalInfo = verifyEval(result);
+                                        return result;
+                                }
 			}
 		}
 		return null;
