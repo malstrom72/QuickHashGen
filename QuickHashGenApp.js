@@ -1,7 +1,7 @@
 "use strict";
 // ===== Output templates =====
 var ZERO_TERMINATED_TEMPLATE =
-        "/* Built with http://nuedge.net/StringHashMaker */\n" +
+        "/* Built with QuickHashGen */\n" +
         "// Seed: ${seed}\n" +
         "static int <<findSomething>>(int n /* string length */, const char* s /* string (zero terminated) */) {\n" +
         "\tstatic const char* STRINGS[${stringCount}] = {\n" +
@@ -17,7 +17,7 @@ var ZERO_TERMINATED_TEMPLATE =
         "\treturn (stringIndex >= 0 && strcmp(s, STRINGS[stringIndex]) == 0) ? stringIndex : -1;\n" +
         "}";
 var NON_ZERO_TERMINATED_TEMPLATE =
-        "/* Built with http://nuedge.net/StringHashMaker */\n" +
+        "/* Built with QuickHashGen */\n" +
         "// Seed: ${seed}\n" +
         "static int <<findSomething>>(int n /* string length */, const char* s /* string (zero termination not required) */) {\n" +
         "\tstatic const char* STRINGS[${stringCount}] = {\n" +
@@ -271,7 +271,7 @@ function applyBestToEditor(found) {
                         code = code.slice(0, bOpen + 1) + cExpr + code.slice(bClose);
                 }
         }
-        var builtIdx = code.indexOf("/* Built with http://nuedge.net/StringHashMaker */");
+        var builtIdx = code.indexOf("/* Built with QuickHashGen");
         if (builtIdx >= 0) {
                 var insertPos = code.indexOf("\n", builtIdx);
                 if (insertPos < 0) insertPos = code.length;
