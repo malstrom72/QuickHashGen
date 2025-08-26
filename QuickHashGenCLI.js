@@ -96,7 +96,7 @@ if (!best) {
 }
 
 if (opts.evalTest) {
-    let expr = qh.generateCOutput("${hashExpression}", best).trim();
+    let expr = qh.generateJSExpression(best);
     let fn;
     try { fn = eval('(function(n,s){return ' + expr + ';})'); }
     catch (e) {
