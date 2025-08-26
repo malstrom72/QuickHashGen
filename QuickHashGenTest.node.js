@@ -44,8 +44,9 @@ var TEMPLATE =
 '   return 0;\n' +
 '}\n';
 
-var seed = ((Math.random() * 1000000) + 1) | 0;
+var seed = process.argv[2] ? parseInt(process.argv[2], 10) : (((Math.random() * 1000000) + 1) | 0);
 process.stdout.write("// seed: " + seed + "\n");
+// Dedicated PRNG for generating the random string set.
 var rnd = new XorshiftPRNG2x32(seed);
 
 var wordCount = rnd.nextInt(100) + 1;
@@ -76,6 +77,42 @@ while (found === null) {
 }
 
 if (found !== null) {
+        // Verify generated JS hash implementations before emitting C++.
+        var jsExpr = theHashMaker.generateJSExpression(found);
+        var evalFn;
+        try {
+                evalFn = eval('(function(n,w){ return ' + jsExpr + '; })');
+        } catch (e) {
+                console.error('Eval compile error: ' + (e && e.message ? e.message : String(e)));
+                process.exit(1);
+        }
+        var jsFn = theHashMaker.generateJSEvaluator(found);
+        // Prepare input arrays with zero padding up to the longest string.
+        var maxLen = 0;
+        for (var i = 0; i < strings.length; ++i) {
+                var L = strings[i].length;
+                if (L > maxLen) maxLen = L;
+        }
+        for (var j = 0; j < strings.length; ++j) {
+                var str = strings[j];
+                var n = str.length;
+                var arr = new Array(maxLen);
+                for (var k = 0; k < maxLen; ++k) {
+                        arr[k] = (k < n ? str.charCodeAt(k) : 0);
+                }
+                var h1 = evalFn(n, arr);
+                var h2 = jsFn(n, arr);
+                if (h1 !== h2) {
+                        console.error('JS expression and function mismatch on #' + j);
+                        process.exit(1);
+                }
+                var idx = found.table[h1];
+                if (idx !== j) {
+                        console.error('JS lookup mismatch on #' + j);
+                        process.exit(1);
+                }
+        }
+
         process.stdout.write(theHashMaker.generateCOutput(TEMPLATE, found));
         process.exit(0);
 } else {
