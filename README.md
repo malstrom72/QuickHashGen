@@ -133,11 +133,12 @@ while (strings.length > minSize) minSize <<= 1;
 const maxSize = minSize * 8;
 
 const gen = new qh.QuickHashGen(strings, minSize, maxSize,
-                                true  /* zero-terminated */, 
-                                true  /* allow multiplications */, 
-                                true  /* allow length */);
+                                 true  /* zero-terminated */,
+                                 true  /* allow multiplications */,
+                                 true  /* allow length */);
 const best = gen.search(10, 1000);
-console.log(gen.generateCOutput('${hashExpression}', best));
+const cExpr = gen.generateCExpression(best);
+console.log(cExpr);
 ```
 
 ### Core API
@@ -152,10 +153,11 @@ class for programmatic integration:
   * `search(complexity, iterations)` – explore random expressions and return
     the first collision-free solution or `null`.
   * `getTestedCount()` – total number of expressions evaluated so far.
-  * `generateCOutput(template, solution)` – populate a C template using a
-    solution object returned by `search`.
-  * `generateJSEvaluator(solution)` – build a JavaScript hash expression and
-    evaluator function for benchmarking or integration.
+    * `generateCExpression(solution)` – build a C hash expression string.
+    * `generateJSExpression(solution)` – build a JavaScript hash expression string.
+    * `generateJSEvaluator(solution)` – build a CSP‑safe evaluator function.
+    * `generateCOutput(template, solution)` – populate a C template using a
+      solution object returned by `search` (internally uses `generateCExpression`).
 * **`parseQuickHashGenInput(text)`** – parse newline or C‑style quoted
   strings into an array, mirroring CLI input handling.
 * **`stringListToC(strings, columns, prefix)`** and

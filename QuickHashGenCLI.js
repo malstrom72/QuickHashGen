@@ -96,7 +96,7 @@ if (!best) {
 }
 
 if (opts.evalTest) {
-    let expr = qh.generateCOutput("${hashExpression}", best).trim();
+    let expr = qh.generateJSExpression(best);
     let fn;
     try { fn = eval('(function(n,s){return ' + expr + ';})'); }
     catch (e) {
@@ -123,8 +123,8 @@ if (opts.evalTest) {
 }
 
 if (opts.bench) {
-    let evalObj = qh.generateJSEvaluator(best);
-    let expr = evalObj.expr;
+    let expr = qh.generateJSExpression(best);
+    let fnFunc = qh.generateJSEvaluator(best);
     let sample = strings[0];
     let n = sample.length;
     let arrLen = opts.requireZeroTermination ? (n + 1) : n;
@@ -135,7 +135,6 @@ if (opts.bench) {
         arr[i] = c;
     }
     let fnEval = eval('(function(n,w){return ' + expr + ';})');
-    let fnFunc = evalObj.fn;
     let ITERS = 100000;
     const MAX_ITERS = 10000000;
     const TARGET_MS = 100;

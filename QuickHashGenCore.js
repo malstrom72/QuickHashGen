@@ -356,14 +356,37 @@ function QuickHashGen(strings, minTableSize, maxTableSize, zeroTerminated, allow
 		return null;
 	};
 
-	this.getTestedCount = function() {
-		return triedCounter;
-	};
+        this.getTestedCount = function() {
+                return triedCounter;
+        };
+
+        function buildExpression(foundSolution) {
+                var exprObj = generateRandomExpression(
+                        foundSolution.prng.clone(),
+                        foundSolution.complexity,
+                        maxTableSize - 1,
+                        true, true);
+                var mask = foundSolution.table.length - 1;
+                return { exprObj: exprObj, mask: mask };
+        }
+
+        this.generateCExpression = function(foundSolution) {
+                var r = buildExpression(foundSolution);
+                return '(' + r.exprObj.c + ') & ' + r.mask;
+        };
+
+        this.generateJSExpression = function(foundSolution) {
+                var r = buildExpression(foundSolution);
+                return '(' + r.exprObj.js + ') & ' + r.mask;
+        };
+
+        this.generateJSEvaluator = function(foundSolution) {
+                var r = buildExpression(foundSolution);
+                return function(n, w) { return r.exprObj.fn(n, w) & r.mask; };
+        };
 
         this.generateCOutput = function(template, foundSolution) {
-                var cExpression = generateRandomExpression(foundSolution.prng.clone(), foundSolution.complexity, maxTableSize - 1, true, true).c;
-
-                cExpression = '(' + cExpression + ') & ' + (foundSolution.table.length - 1);
+                var cExpression = this.generateCExpression(foundSolution);
 
 		var replaceMap = {
 			'minLength': function() { return minLength; },
@@ -393,17 +416,6 @@ function QuickHashGen(strings, minTableSize, maxTableSize, zeroTerminated, allow
 		}
 
                 return output;
-        };
-
-        // Generate JS expression and CSP-safe function for benchmarking.
-        this.generateJSEvaluator = function(foundSolution) {
-                var exprObj = generateRandomExpression(foundSolution.prng.clone(), foundSolution.complexity, maxTableSize - 1, false, false);
-                var mask = foundSolution.table.length - 1;
-                var jsExpr = '(' + exprObj.js + ') & ' + mask;
-                return {
-                        expr: jsExpr,
-                        fn: function(n, w) { return exprObj.fn(n, w) & mask; }
-                };
         };
 
 }
