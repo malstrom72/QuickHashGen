@@ -37,6 +37,7 @@ var HTML_ELEMENTS = [
 	"editor",
 	"solutionsCount",
 	"complexity",
+	"cost",
 	"tableSize",
 	"testedCount",
 	"requireZeroTermination",
@@ -354,6 +355,7 @@ function resetSearch() {
 		elements.testedCount.textContent = "0";
 		elements.solutionsCount.textContent = "0";
 		elements.complexity.textContent = "?";
+		elements.cost.textContent = "?";
 		elements.tableSize.textContent = "?";
 	}
 }
@@ -467,6 +469,7 @@ function intervalFunction() {
 			elements.testedCount.textContent = theHashMaker.getTestedCount();
 			elements.solutionsCount.textContent = solutionsCounter;
 			elements.complexity.textContent = best === null ? "?" : best.complexity;
+			elements.cost.textContent = best === null ? "?" : best.cost;
 			elements.tableSize.textContent = best === null ? "?" : best.table.length;
 		}
 	} catch (err) {
