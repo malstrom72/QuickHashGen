@@ -19,6 +19,7 @@ node QuickHashGenCLI.js [options] [input-file]
 
 Options:
 
+* `-h`, `--help` &ndash; display usage information.
 * `--tests N` &ndash; number of expressions to try (default `100000`). A larger value
   increases the search space and the odds of discovering a lower-complexity hash
   at the cost of longer runtime.

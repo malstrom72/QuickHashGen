@@ -1,6 +1,12 @@
 @echo off
 setlocal
 
+node QuickHashGenCLI.js --help > tests\help.log 2>&1
+findstr /R /C:"Usage:" tests\help.log >nul || exit /b 1
+node QuickHashGenCLI.js -h > tests\help.log 2>&1
+findstr /R /C:"Usage:" tests\help.log >nul || exit /b 1
+del tests\help.log
+
 node QuickHashGenCLI.js --seed 1 --tests 100 tests\input1.txt > tests\out1.c
 node QuickHashGenCLI.js --seed 1 --tests 100 --force-eval --eval-test tests\input1.txt > tests\out1_eval.c
 if errorlevel 1 exit /b 1
