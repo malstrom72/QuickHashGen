@@ -328,11 +328,11 @@ function resetSearch() {
                         elements.evalTest && elements.evalTest.checked,
                         currentSeed,
                 );
-                elements.hashes.innerHTML = "";
-                elements.testedCount.innerHTML = "0";
-                elements.solutionsCount.innerHTML = "0";
-                elements.complexity.innerHTML = "?";
-                elements.tableSize.innerHTML = "?";
+                elements.hashes.textContent = "";
+                elements.testedCount.textContent = "0";
+                elements.solutionsCount.textContent = "0";
+                elements.complexity.textContent = "?";
+                elements.tableSize.textContent = "?";
         }
 }
 function updateCodeMetadata() {
@@ -408,8 +408,8 @@ function updateOutput() {
                                 " (" +
                                 best.hashes[i] +
                                 ")\n";
-                elements.hashes.innerHTML = s;
-        } else elements.hashes.innerHTML = "";
+                elements.hashes.textContent = s;
+        } else elements.hashes.textContent = "";
         updateModeLabel();
 }
 function intervalFunction() {
