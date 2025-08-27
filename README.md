@@ -41,8 +41,8 @@ Options:
   engine" checkbox and can influence performance depending on the environment.
 * `--bench` &ndash; run a simple benchmark comparing the `Function` constructor and
   `eval` engines after a solution is found.
- * `--seed N` &ndash; seed the internal PRNG for deterministic output with a single
-   32-bit value.
+ * `--seed N` &ndash; seed all internal randomness with a single 32-bit value for
+   fully deterministic output.
 
 ### Input formats
 
@@ -177,6 +177,20 @@ class for programmatic integration:
   strings and raw JavaScript strings.
 * **`XorshiftPRNG2x32`** – deterministic pseudo‑random number generator used
   during the search.
+
+### Debug mode
+
+The core library includes a lightweight assertion helper and a few
+quick self-tests that run only when debug mode is enabled. To enable
+debugging during development, set the `NODE_ENV` environment variable
+to `development` before executing any scripts. For example:
+
+```
+NODE_ENV=development node QuickHashGenCLI.js --help
+```
+
+With `NODE_ENV` unset or set to `production`, these assertions and tests
+are skipped.
 
 ## Browser interface
 

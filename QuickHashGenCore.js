@@ -1,7 +1,8 @@
 "use strict";
 // Core hashing algorithm extracted for reuse in browser and CLI tools.
 
-var DEBUG = true;
+// Enable debug assertions by setting NODE_ENV=development.
+var DEBUG = typeof process !== 'undefined' && process && process.env && process.env.NODE_ENV === 'development';
 
 var assert;
 if (DEBUG) {
@@ -12,7 +13,9 @@ if (DEBUG) {
 	AssertionError.prototype = Error.prototype;
 	assert = function(condition, message) {
 		if (!condition) {
-			if ("assert" in console) console.assert(condition, message);
+			if (typeof console !== 'undefined' && typeof console.assert === 'function') {
+				console.assert(condition, message);
+			}
 			throw new AssertionError(message);
 		}
 	};
@@ -154,14 +157,13 @@ function escapeCString(s) {
 	return o;
 }
 
-// Q & D test
-
 if (DEBUG) {
-	var p = parseCString('"ab\\0cdef\\\\gjio\\n\\\r\nx\\x45\\u0045\\u0123\\?\\053\\1012end"slack');
-	assert(p[0] === "ab\0cdef\\gjio\nxEE\u0123?+A2end" && p[1] === 52);
-	assert(escapeCString("hej \n \x22''\\ \x04 \u2414 \0 \r du") === "\"hej \\n \\\"''\\\\ \\x04 \\u2414 \\0 \\r du\"");
-	assert(escapeCString("\x050018efgef") === '"\\x05\\x30\\x30\\x31\\x38\\x65\\x66gef"'); // \x in C++ is greedy (stupid)
-	assert(escapeCString("\u050018efgef") === '"\\u050018efgef"'); // \u isn't greedy
+        // Quick-and-dirty tests
+        var p = parseCString('"ab\\0cdef\\\\gjio\\n\\\r\nx\\x45\\u0045\\u0123\\?\\053\\1012end"slack');
+        assert(p[0] === "ab\0cdef\\gjio\nxEE\u0123?+A2end" && p[1] === 52);
+        assert(escapeCString("hej \n \x22''\\ \x04 \u2414 \0 \r du") === "\"hej \\n \\\"''\\\\ \\x04 \\u2414 \\0 \\r du\"");
+        assert(escapeCString("\x050018efgef") === '"\\x05\\x30\\x30\\x31\\x38\\x65\\x66gef"'); // \x in C++ is greedy (stupid)
+        assert(escapeCString("\u050018efgef") === '"\\u050018efgef"'); // \u isn't greedy
 }
 
 function stringListToC(strings, maxCols, pre) {
@@ -226,7 +228,7 @@ function QuickHashGen(strings, minTableSize, maxTableSize, zeroTerminated, allow
         var prng = new XorshiftPRNG2x32(seed0, seed1);
         this.randomInt = function(max) {
                 return prng.nextInt(max);
-        };
+	};
         this.getSeed = function() { return seed0; };
 
 	var maxLength = 0;
@@ -264,15 +266,15 @@ function QuickHashGen(strings, minTableSize, maxTableSize, zeroTerminated, allow
                 var fn;
                 try {
                         fn = eval('(function(n,w){return ' + expr + ';})');
-                } catch (e) {
-                        throw new Error('Eval compile error: ' + (e && e.message ? e.message : String(e)));
-                }
+		} catch (e) {
+			throw new Error('Eval compile error: ' + (e && e.message ? e.message : String(e)));
+		}
                 var minLen = Infinity;
                 for (var i = 0; i < strings.length; ++i) {
                         var L = strings[i].length;
-                        if (L < minLen) minLen = L;
-                }
-                if (!isFinite(minLen)) return { checked: 0 };
+			if (L < minLen) minLen = L;
+		}
+		if (!isFinite(minLen)) return { checked: 0 };
                 var padLen = zeroTerminated ? (minLen + 1) : minLen;
                 var mod = foundSolution.table.length;
                 for (var j = 0; j < strings.length; ++j) {
@@ -283,18 +285,18 @@ function QuickHashGen(strings, minTableSize, maxTableSize, zeroTerminated, allow
                                 var c = (k < n ? str.charCodeAt(k) : 0);
                                 if (c >= 128) c -= 256;
                                 arr[k] = c;
-                        }
+			}
                         var idx;
                         try {
                                 idx = fn(n, arr) & (mod - 1);
-                        } catch (e2) {
+			} catch (e2) {
                                 throw new Error('Eval runtime error on #' + j + ': ' + (e2 && e2.message ? e2.message : String(e2)));
-                        }
+			}
                         var idxFunc = foundSolution.hashes[j] & (mod - 1);
-                        if (idx !== idxFunc || foundSolution.table[idx] !== j) {
+			if (idx !== idxFunc || foundSolution.table[idx] !== j) {
                                 throw new Error('Eval mismatch on #' + j);
-                        }
-                }
+			}
+		}
                 return { checked: strings.length };
         }
 
@@ -412,6 +414,7 @@ function QuickHashGen(strings, minTableSize, maxTableSize, zeroTerminated, allow
 				var found = false;
 				while (!found && tableSize <= maxTableSize) {
 					var j = 0;
+					var hash;
 					while (j < stringsCount && collisions[hash = (hashes[j] & (tableSize - 1))] !== counter) {
 						collisions[hash] = counter;
 						++j;
@@ -423,19 +426,19 @@ function QuickHashGen(strings, minTableSize, maxTableSize, zeroTerminated, allow
 						tableSize <<= 1;
 					}
 				}
-								
-                                if (found) {
-                                        var table = new Array(tableSize);
-                                        for (var j = 0; j < tableSize; ++j) table[j] = -1;
-                                        for (var j = 0; j < stringsCount; ++j) {
-                                                var hash = func(strings[j].length, stringChars[j]) & (tableSize - 1);
-                                                if (DEBUG) assert(table[hash] === -1, "table[hash] === -1");
-                                                table[hash] = j;
-                                        }
-                                        var result = { "complexity":complexity, "prng":prngCopy, "table":table, "hashes":hashes };
-                                        if (evalTest) result.evalInfo = verifyEval(result);
-                                        return result;
-                                }
+
+				if (found) {
+					var table = new Array(tableSize);
+					for (var j = 0; j < tableSize; ++j) table[j] = -1;
+					for (var j = 0; j < stringsCount; ++j) {
+						var hash = func(strings[j].length, stringChars[j]) & (tableSize - 1);
+						if (DEBUG) assert(table[hash] === -1, "table[hash] === -1");
+						table[hash] = j;
+					}
+					var result = { "complexity":complexity, "prng":prngCopy, "table":table, "hashes":hashes };
+					if (evalTest) result.evalInfo = verifyEval(result);
+					return result;
+				}
 			}
 		}
 		return null;
@@ -443,7 +446,7 @@ function QuickHashGen(strings, minTableSize, maxTableSize, zeroTerminated, allow
 
         this.getTestedCount = function() {
                 return triedCounter;
-        };
+	};
 
         function buildExpression(foundSolution) {
                 var exprObj = generateRandomExpression(
@@ -458,17 +461,17 @@ function QuickHashGen(strings, minTableSize, maxTableSize, zeroTerminated, allow
         this.generateCExpression = function(foundSolution) {
                 var r = buildExpression(foundSolution);
                 return '(' + r.exprObj.c + ') & ' + r.mask + 'u';
-        };
+	};
 
         this.generateJSExpression = function(foundSolution) {
                 var r = buildExpression(foundSolution);
                 return '(' + r.exprObj.js + ') & ' + r.mask;
-        };
+	};
 
         this.generateJSEvaluator = function(foundSolution) {
                 var r = buildExpression(foundSolution);
                 return function(n, w) { return r.exprObj.fn(n, w) & r.mask; };
-        };
+	};
 
         this.generateCOutput = function(template, foundSolution) {
                 var cExpression = this.generateCExpression(foundSolution);
@@ -483,7 +486,7 @@ function QuickHashGen(strings, minTableSize, maxTableSize, zeroTerminated, allow
                         'hashExpression': function() { return cExpression; },
                         'stringDescription': function() { return (zeroTerminated ? "zero terminated" : "zero termination not required"); },
                         'seed': function() { return seed0; }
-                };
+		};
 
 		var output = '';
 		var input = template;
@@ -502,7 +505,7 @@ function QuickHashGen(strings, minTableSize, maxTableSize, zeroTerminated, allow
 		}
 
                 return output;
-        };
+	};
 
 }
 
@@ -511,7 +514,7 @@ function parseQuickHashGenInput(text) {
 	var strings = [ ];
 	for (var i = 0; i < lines.length; ++i) {
 		var s = lines[i].trim();
-		if (s[0] === '\"' || s[0] === '\'') {
+		if (s.length && (s[0] === '\"' || s[0] === '\'')) {
 			var o = 0;
 			while (o < s.length) {
 				var parsed = parseCString(s.substr(o));
@@ -524,8 +527,8 @@ function parseQuickHashGenInput(text) {
 					throw new Error("Invalid input");
 				}
 			}
-		} else {
-			if (s !== "") strings.push(s);
+		} else if (s.length) {
+			strings.push(s);
 		}
 	}
 	return strings;

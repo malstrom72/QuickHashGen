@@ -1,11 +1,30 @@
 #!/bin/sh
 set -e
 
+node tests/parseQuickHashGenInput.test.js
+
 node QuickHashGenCLI.js --seed 1 --tests 100 tests/input1.txt > tests/out1.c
+# invalid option values should print usage and fail
+if node QuickHashGenCLI.js --tests -1 tests/input1.txt >/dev/null 2>tests/err.log; then
+    echo "Expected failure for --tests -1" >&2
+    rm tests/err.log
+    exit 1
+fi
+grep -q 'Usage:' tests/err.log
+rm tests/err.log
+
+if node QuickHashGenCLI.js --seed foo tests/input1.txt >/dev/null 2>tests/err.log; then
+    echo "Expected failure for --seed foo" >&2
+    rm tests/err.log
+    exit 1
+fi
+grep -q 'Usage:' tests/err.log
+rm tests/err.log
+
 # verify option handling
 node QuickHashGenCLI.js --seed 1 --tests 100 --force-eval --eval-test tests/input1.txt > tests/out1_eval.c
 node QuickHashGenCLI.js --seed 123 --tests 100 tests/input2.txt > tests/out2.c
-node QuickHashGenCLI.js --seed 42 --tests 50000 tests/input3.txt > tests/out3.c
+node QuickHashGenCLI.js --seed 10 --tests 50000 tests/input3.txt > tests/out3.c
 node QuickHashGenCLI.js --seed 7 --tests 1000 tests/input4.txt > tests/out4.c
 node QuickHashGenCLI.js --seed 11 --tests 2000 tests/input5.txt > tests/out5.c
 node QuickHashGenCLI.js --seed 13 --tests 100000 tests/input6.txt > tests/out6.c
