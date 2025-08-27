@@ -45,33 +45,33 @@ var HTML_ELEMENTS = [
 	"evalTest",
 	"forceEval",
 	"hashes",
-	"startPause",
+	"startStop",
 	"testStatus",
 ];
 var elements = {};
 for (var i = 0; i < HTML_ELEMENTS.length; ++i)
 	elements[HTML_ELEMENTS[i]] = document.getElementById(HTML_ELEMENTS[i]);
-// Pause on edits/toggles
+// Stop on edits/toggles
 var isRunning = false;
 if (elements.editor)
 	elements.editor.addEventListener("input", function () {
 		if (isRunning) {
 			isRunning = false;
-			elements.startPause.textContent = "Start";
+			elements.startStop.textContent = "Start";
 		}
 	});
 if (elements.allowMultiplications)
 	elements.allowMultiplications.addEventListener("change", function () {
 		if (isRunning) {
 			isRunning = false;
-			elements.startPause.textContent = "Start";
+			elements.startStop.textContent = "Start";
 		}
 	});
 if (elements.allowLength)
 	elements.allowLength.addEventListener("change", function () {
 		if (isRunning) {
 			isRunning = false;
-			elements.startPause.textContent = "Start";
+			elements.startStop.textContent = "Start";
 		}
 	});
 if (elements.requireZeroTermination)
@@ -94,7 +94,7 @@ if (elements.requireZeroTermination)
 		}
 		if (isRunning) {
 			isRunning = false;
-			elements.startPause.textContent = "Start";
+			elements.startStop.textContent = "Start";
 		}
 	});
 if (elements.forceEval)
@@ -102,7 +102,7 @@ if (elements.forceEval)
 		ENGINE_USE_EVAL = !!(EVAL_ALLOWED && elements.forceEval.checked);
 		if (isRunning) {
 			isRunning = false;
-			elements.startPause.textContent = "Start";
+			elements.startStop.textContent = "Start";
 		}
 		updateModeLabel();
 	});
@@ -121,11 +121,11 @@ var EVAL_ALLOWED = false;
 function toggleRun() {
 	if (isRunning) {
 		isRunning = false;
-		elements.startPause.textContent = "Start";
+		elements.startStop.textContent = "Start";
 		return;
 	}
 	isRunning = true;
-	elements.startPause.textContent = "Pause";
+	elements.startStop.textContent = "Stop";
 	resetSearch(); // re-parse editor (C++ or raw list)
 	updateCodeMetadata(); // sync STRINGS length and min/max guard
 }
@@ -200,7 +200,7 @@ function detectEvalAllowed() {
 function stopAndReport(header, details) {
 	try {
 		isRunning = false;
-		if (elements.startPause) elements.startPause.textContent = "Start";
+		if (elements.startStop) elements.startStop.textContent = "Start";
 	} catch (err) {
 		console.error("Failed to update run state", err);
 	}
@@ -472,7 +472,7 @@ function intervalFunction() {
 		elements.hashes.textContent = String(err);
 		theHashMaker = null;
 		isRunning = false;
-		elements.startPause.textContent = "Start";
+		elements.startStop.textContent = "Start";
 	}
 }
 window.setInterval(intervalFunction, 200);
