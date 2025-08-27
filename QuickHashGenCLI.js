@@ -87,9 +87,9 @@ if (!strings.length) {
 	process.exit(1);
 }
 
-let minSize = 1;
-while (strings.length > minSize) minSize <<= 1;
-let maxSize = minSize * 8;
+const bounds = core.computeTableBounds(strings);
+let minSize = bounds.minSize;
+let maxSize = bounds.maxSize;
 
 let seed =
 	typeof opts.seed === "number"
@@ -109,23 +109,23 @@ let qh = new core.QuickHashGen(
 );
 let best = null;
 while (qh.getTestedCount() < opts.tests) {
-    let complexity =
-        complexityPRNG.nextInt(best === null ? 32 : best.complexity) + 1;
-    let remaining = opts.tests - qh.getTestedCount();
-    let iters = Math.max(
-        1,
-        Math.min(remaining, Math.floor(200 / strings.length)),
-    );
-    let found = qh.search(complexity, iters);
-    if (
-        found &&
-        (best === null ||
-            found.cost < best.cost ||
-            (found.cost === best.cost && found.table.length < best.table.length))
-    ) {
-        best = found;
-        if (best.complexity === 1) break;
-    }
+	const remaining = opts.tests - qh.getTestedCount();
+	const found = core.scheduleStep(
+		qh,
+		best,
+		complexityPRNG,
+		strings.length,
+		remaining,
+	);
+	if (
+		found &&
+		(best === null ||
+			found.cost < best.cost ||
+			(found.cost === best.cost && found.table.length < best.table.length))
+	) {
+		best = found;
+		if (best.complexity === 1) break;
+	}
 }
 
 if (!best) {
@@ -186,41 +186,12 @@ if (opts.bench) {
 	);
 }
 
-const ZERO_TEMPLATE =
-	"/* Built with QuickHashGen CLI */\n" +
-	"static int lookup(int n /* string length */, const char* s /* string (zero terminated) */) {\n" +
-	"\tstatic const char* STRINGS[${stringCount}] = {\n" +
-	"\t\t${stringList}\n" +
-	"\t};\n" +
-	"\tstatic const int HASH_TABLE[${tableSize}] = {\n" +
-	"\t\t${tableData}\n" +
-	"\t};\n" +
-	"\tconst unsigned char* p = (const unsigned char*) s;\n" +
-	"\tif (n < ${minLength} || n > ${maxLength}) return -1;\n" +
-	"\tint stringIndex = HASH_TABLE[${hashExpression}];\n" +
-	"\treturn (stringIndex >= 0 && strcmp(s, STRINGS[stringIndex]) == 0) ? stringIndex : -1;\n" +
-	"}\n";
-
-const NONZERO_TEMPLATE =
-	"/* Built with QuickHashGen CLI */\n" +
-	"static int lookup(int n /* string length */, const char* s /* string (zero termination not required) */) {\n" +
-	"\tstatic const char* STRINGS[${stringCount}] = {\n" +
-	"\t\t${stringList}\n" +
-	"\t};\n" +
-	"\tstatic const int HASH_TABLE[${tableSize}] = {\n" +
-	"\t\t${tableData}\n" +
-	"\t};\n" +
-	"\tconst unsigned char* p = (const unsigned char*) s;\n" +
-	"\t// zero-termination not expected\n" +
-	"\tif (n < ${minLength} || n > ${maxLength}) return -1;\n" +
-	"\tint stringIndex = HASH_TABLE[${hashExpression}];\n" +
-	"\treturn (stringIndex >= 0 && strncmp(s, STRINGS[stringIndex], n) == 0 && STRINGS[stringIndex][n] == 0) ? stringIndex : -1;\n" +
-	"}\n";
-
-let TEMPLATE = opts.requireZeroTermination ? ZERO_TEMPLATE : NONZERO_TEMPLATE;
-let out = qh.generateCOutput(TEMPLATE, best);
-out = out.replace(
-	"/* Built with QuickHashGen CLI */\n",
-	"/* Built with QuickHashGen CLI */\n// Seed: " + seed + "\n",
-);
+const TEMPLATE = core.makeCTemplate({
+	zeroTerminated: opts.requireZeroTermination,
+	functionName: "lookup",
+	header: "/* Built with QuickHashGen CLI */\n",
+	includeSeedComment: true,
+	includeAssert: false,
+});
+const out = qh.generateCOutput(TEMPLATE, best);
 process.stdout.write(out);

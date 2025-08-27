@@ -1,1 +1,6 @@
 .DS_Store
+/node_modules
+tests/out3.c
+tests/out2.c
+tests/out1_eval.c
+tests/out1.c

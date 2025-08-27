@@ -690,7 +690,7 @@ function QuickHashGen(
 			// This keeps progress monotonic and avoids stalls when many
 			// low-complexity duplicates are generated.
 			++triedCounter;
-			
+
 			if (complexity > 4 || !(expr in tried[complexity])) {
 				if (complexity <= 4) {
 					tried[complexity][expr] = true;
@@ -842,6 +842,11 @@ function QuickHashGen(
 
 		return output;
 	};
+
+	// Optional helper for shared schedulers (UI/CLI).
+	this.getStringsLength = function () {
+		return strings.length;
+	};
 }
 
 function parseQuickHashGenInput(text) {
@@ -869,6 +874,207 @@ function parseQuickHashGenInput(text) {
 	return strings;
 }
 
+// ===== Shared helpers for CLI and Web UI (non-breaking additions) =====
+
+function computeTableBounds(strings) {
+	var minSize = 1;
+	while (strings.length > minSize) minSize <<= 1;
+	var maxSize = minSize * 8;
+	return { minSize: minSize, maxSize: maxSize };
+}
+
+function iterationsFor(stringsLength, base) {
+	if (typeof base === "undefined") base = 200;
+	if (!(base > 0)) base = 200;
+	var v = Math.floor(base / Math.max(1, stringsLength));
+	return v > 0 ? v : 1;
+}
+
+function makeCTemplate(options) {
+	options = options || {};
+	var zeroTerminated = !!options.zeroTerminated;
+	var functionName = options.functionName || "lookup";
+	var header = options.header || "/* Built with QuickHashGen */\n";
+	var includeSeed = !!options.includeSeedComment;
+	var includeAssert = !!options.includeAssert;
+	var seedLine = includeSeed ? "// Seed: ${seed}\n" : "";
+	if (zeroTerminated) {
+		return (
+			header +
+			seedLine +
+			"static int " +
+			functionName +
+			"(int n /* string length */, const char* s /* string (zero terminated) */) {\n" +
+			"\tstatic const char* STRINGS[${stringCount}] = {\n" +
+			"\t\t${stringList}\n" +
+			"\t};\n" +
+			"\tstatic const int HASH_TABLE[${tableSize}] = {\n" +
+			"\t\t${tableData}\n" +
+			"\t};\n" +
+			"\tconst unsigned char* p = (const unsigned char*) s;\n" +
+			(includeAssert ? "\tassert(s[n] == '\\0');\n" : "") +
+			"\tif (n < ${minLength} || n > ${maxLength}) return -1;\n" +
+			"\tint stringIndex = HASH_TABLE[${hashExpression}];\n" +
+			"\treturn (stringIndex >= 0 && strcmp(s, STRINGS[stringIndex]) == 0) ? stringIndex : -1;\n" +
+			"}\n"
+		);
+	} else {
+		return (
+			header +
+			seedLine +
+			"static int " +
+			functionName +
+			"(int n /* string length */, const char* s /* string (zero termination not required) */) {\n" +
+			"\tstatic const char* STRINGS[${stringCount}] = {\n" +
+			"\t\t${stringList}\n" +
+			"\t};\n" +
+			"\tstatic const int HASH_TABLE[${tableSize}] = {\n" +
+			"\t\t${tableData}\n" +
+			"\t};\n" +
+			"\tconst unsigned char* p = (const unsigned char*) s;\n" +
+			"\t// zero-termination not expected\n" +
+			"\tif (n < ${minLength} || n > ${maxLength}) return -1;\n" +
+			"\tint stringIndex = HASH_TABLE[${hashExpression}];\n" +
+			"\treturn (stringIndex >= 0 && strncmp(s, STRINGS[stringIndex], n) == 0 && STRINGS[stringIndex][n] == 0) ? stringIndex : -1;\n" +
+			"}\n"
+		);
+	}
+}
+
+function parseSeedComment(text) {
+	var m = /\/\/\s*Seed:\s*(\d+)/.exec(String(text));
+	if (!m) return undefined;
+	var v = parseInt(m[1], 10);
+	return Number.isFinite(v) ? v >>> 0 : undefined;
+}
+
+function formatSeedComment(seed) {
+	return "// Seed: " + ((seed >>> 0) >>> 0);
+}
+
+function findInitializerRange(code, declStart) {
+	var eq = code.indexOf("=", declStart);
+	if (eq < 0) return null;
+	var open = code.indexOf("{", eq);
+	if (open < 0) return null;
+	var depth = 1,
+		k = open + 1;
+	while (k < code.length && depth > 0) {
+		var ch = code[k++];
+		if (ch === "{") depth++;
+		else if (ch === "}") depth--;
+	}
+	if (depth !== 0) return null;
+	return { open: open, close: k - 1 };
+}
+
+function findMatchingSquare(code, openIndex) {
+	if (openIndex < 0 || code[openIndex] !== "[") return -1;
+	var depth = 0;
+	for (var i = openIndex; i < code.length; ++i) {
+		var ch = code[i];
+		if (ch === "[") depth++;
+		else if (ch === "]") {
+			depth--;
+			if (depth === 0) return i;
+		}
+	}
+	return -1;
+}
+
+function scheduleStep(qh, best, rng, stringsLength, remainingTests) {
+	var maxC = best === null ? 32 : best.complexity;
+	var complexity = rng.nextInt(maxC) + 1;
+	var iters = iterationsFor(stringsLength, 200);
+	if (typeof remainingTests === "number") {
+		iters = Math.min(iters, Math.max(1, remainingTests | 0));
+	}
+	return qh.search(complexity, iters);
+}
+
+// Update or generate C code using a found solution. If the provided code
+// contains a STRINGS array, this patches the HASH_TABLE size and initializer,
+// the hash expression inside HASH_TABLE[...], and refreshes the seed comment.
+// If no STRINGS array is present, this generates a full snippet using the
+// provided template options via makeCTemplate.
+function updateCCodeWithSolution(code, qh, foundSolution, templateOptions) {
+	code = String(code || "");
+	if (code.indexOf("STRINGS") < 0) {
+		// Generate complete output from template
+		var tpl = makeCTemplate(
+			templateOptions || {
+				zeroTerminated: true,
+				functionName: "lookup",
+				header: "/* Built with QuickHashGen */\n",
+				includeSeedComment: true,
+				includeAssert: false,
+			},
+		);
+		return qh.generateCOutput(tpl, foundSolution);
+	}
+
+	// 1) Update HASH_TABLE size literal if present
+	var declStart = code.indexOf("static const int HASH_TABLE[");
+	if (declStart < 0) declStart = code.indexOf("HASH_TABLE[");
+	if (declStart >= 0) {
+		var openIdx = code.indexOf("[", declStart) + 1;
+		var closeIdx = code.indexOf("]", openIdx);
+		if (openIdx > 0 && closeIdx > openIdx) {
+			code =
+				code.slice(0, openIdx) +
+				String(foundSolution.table.length) +
+				code.slice(closeIdx);
+		}
+	}
+
+	// 2) Replace HASH_TABLE initializer body
+	var rng = findInitializerRange(code, declStart);
+	if (rng) {
+		var header = code.slice(0, rng.open + 1);
+		var footer = code.slice(rng.close);
+		var tableBody = numberListToC(foundSolution.table, 16, 0, "\t\t");
+		code = header + "\n\t\t" + tableBody + "\n\t" + footer;
+	}
+
+	// 3) Update the hash expression inside HASH_TABLE[...]
+	var useStart = code.indexOf("int stringIndex");
+	var startIdx =
+		useStart >= 0
+			? code.indexOf("HASH_TABLE[", useStart)
+			: code.lastIndexOf("HASH_TABLE[");
+	if (startIdx >= 0) {
+		var bOpen = code.indexOf("[", startIdx);
+		var bClose = findMatchingSquare(code, bOpen);
+		if (bOpen >= 0 && bClose > bOpen) {
+			var cExpr = qh.generateCOutput("${hashExpression}", foundSolution).trim();
+			code = code.slice(0, bOpen + 1) + cExpr + code.slice(bClose);
+		}
+	}
+
+	// 4) Update or insert seed comment after the built-with header
+	var builtIdx = code.indexOf("/* Built with QuickHashGen");
+	if (builtIdx >= 0) {
+		var insertPos = code.indexOf("\n", builtIdx);
+		insertPos = insertPos < 0 ? code.length : insertPos + 1;
+		if (code.substr(insertPos, 8) === "// Seed:") {
+			var lineEnd = code.indexOf("\n", insertPos);
+			if (lineEnd < 0) lineEnd = code.length;
+			code =
+				code.slice(0, insertPos) +
+				formatSeedComment(qh.getSeed()) +
+				code.slice(lineEnd);
+		} else {
+			code =
+				code.slice(0, insertPos) +
+				formatSeedComment(qh.getSeed()) +
+				"\n" +
+				code.slice(insertPos);
+		}
+	}
+
+	return code;
+}
+
 if (typeof module !== "undefined") {
 	module.exports = {
 		assert: assert,
@@ -880,5 +1086,15 @@ if (typeof module !== "undefined") {
 		numberListToC: numberListToC,
 		parseQuickHashGenInput: parseQuickHashGenInput,
 		QuickHashGen: QuickHashGen,
+		// Shared helpers
+		computeTableBounds: computeTableBounds,
+		iterationsFor: iterationsFor,
+		makeCTemplate: makeCTemplate,
+		parseSeedComment: parseSeedComment,
+		formatSeedComment: formatSeedComment,
+		findInitializerRange: findInitializerRange,
+		findMatchingSquare: findMatchingSquare,
+		scheduleStep: scheduleStep,
+		updateCCodeWithSolution: updateCCodeWithSolution,
 	};
 }

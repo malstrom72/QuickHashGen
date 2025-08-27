@@ -1,37 +1,14 @@
 "use strict";
-// ===== Output templates =====
-var ZERO_TERMINATED_TEMPLATE =
-	"/* Built with QuickHashGen */\n" +
-	"// Seed: ${seed}\n" +
-	"static int <<findSomething>>(int n /* string length */, const char* s /* string (zero terminated) */) {\n" +
-	"\tstatic const char* STRINGS[${stringCount}] = {\n" +
-	"\t\t${stringList}\n" +
-	"\t};\n" +
-	"\tstatic const int HASH_TABLE[${tableSize}] = {\n" +
-	"\t\t${tableData}\n" +
-	"\t};\n" +
-	"\tconst unsigned char* p = (const unsigned char*) s;\n" +
-	"\tassert(s[n] == '\\0');\n" +
-	"\tif (n < ${minLength} || n > ${maxLength}) return -1;\n" +
-	"\tint stringIndex = HASH_TABLE[${hashExpression}];\n" +
-	"\treturn (stringIndex >= 0 && strcmp(s, STRINGS[stringIndex]) == 0) ? stringIndex : -1;\n" +
-	"}";
-var NON_ZERO_TERMINATED_TEMPLATE =
-	"/* Built with QuickHashGen */\n" +
-	"// Seed: ${seed}\n" +
-	"static int <<findSomething>>(int n /* string length */, const char* s /* string (zero termination not required) */) {\n" +
-	"\tstatic const char* STRINGS[${stringCount}] = {\n" +
-	"\t\t${stringList}\n" +
-	"\t};\n" +
-	"\tstatic const int HASH_TABLE[${tableSize}] = {\n" +
-	"\t\t${tableData}\n" +
-	"\t};\n" +
-	"\tconst unsigned char* p = (const unsigned char*) s;\n" +
-	"\t// zero-termination not expected\n" +
-	"\tif (n < ${minLength} || n > ${maxLength}) return -1;\n" +
-	"\tint stringIndex = HASH_TABLE[${hashExpression}];\n" +
-	"\treturn (stringIndex >= 0 && strncmp(s, STRINGS[stringIndex], n) == 0 && STRINGS[stringIndex][n] == 0) ? stringIndex : -1;\n" +
-	"}";
+// ===== Output template (shared via core) =====
+function buildTemplate(zeroTerminated) {
+	return makeCTemplate({
+		zeroTerminated: !!zeroTerminated,
+		functionName: "<<findSomething>>",
+		header: "/* Built with QuickHashGen */\n",
+		includeSeedComment: true,
+		includeAssert: true,
+	});
+}
 // ===== DOM wiring & state =====
 var HTML_ELEMENTS = [
 	"editor",
@@ -77,9 +54,7 @@ if (elements.allowLength)
 	});
 if (elements.requireZeroTermination)
 	elements.requireZeroTermination.addEventListener("change", function () {
-		currentTemplate = elements.requireZeroTermination.checked
-			? ZERO_TERMINATED_TEMPLATE
-			: NON_ZERO_TERMINATED_TEMPLATE;
+		currentTemplate = buildTemplate(elements.requireZeroTermination.checked);
 		// Apply signature/assert/return rewrite so the editor stays in sync with the toggle
 		try {
 			var code = elements.editor.value || "";
@@ -107,7 +82,7 @@ if (elements.forceEval)
 		}
 		updateModeLabel();
 	});
-var currentTemplate = ZERO_TERMINATED_TEMPLATE;
+var currentTemplate = buildTemplate(true);
 var theHashMaker = null,
 	lastInputText = elements.editor.value,
 	solutionsCounter = 0,
@@ -160,34 +135,7 @@ function parseStringsFromEditor(text) {
 	}
 	return parseQuickHashGenInput(text);
 }
-function findInitializerRange(code, declStart) {
-	var eq = code.indexOf("=", declStart);
-	if (eq < 0) return null;
-	var open = code.indexOf("{", eq);
-	if (open < 0) return null;
-	var depth = 1,
-		k = open + 1;
-	while (k < code.length && depth > 0) {
-		var ch = code[k++];
-		if (ch === "{") depth++;
-		else if (ch === "}") depth--;
-	}
-	if (depth !== 0) return null;
-	return { open: open, close: k - 1 };
-}
-function findMatchingSquare(code, openIndex) {
-	if (openIndex < 0 || code[openIndex] !== "[") return -1;
-	var depth = 0;
-	for (var i = openIndex; i < code.length; ++i) {
-		var ch = code[i];
-		if (ch === "[") depth++;
-		else if (ch === "]") {
-			depth--;
-			if (depth === 0) return i;
-		}
-	}
-	return -1;
-}
+// findInitializerRange and findMatchingSquare are provided by the core.
 
 function detectEvalAllowed() {
 	try {
@@ -241,71 +189,15 @@ function updateModeLabel() {
 }
 function applyBestToEditor(found) {
 	var code = elements.editor.value || "";
-	var hasStrings = code.indexOf("STRINGS") >= 0;
-	if (!hasStrings) {
-		elements.editor.value = theHashMaker.generateCOutput(
-			currentTemplate,
-			found,
-		);
-		lastInputText = elements.editor.value;
-		return;
-	}
-	var tableSize = found.table.length;
-	var tableBody = numberListToC(found.table, 16, 0, "\t\t");
-	var declStart = code.indexOf("static const int HASH_TABLE[");
-	if (declStart < 0) declStart = code.indexOf("HASH_TABLE[");
-	if (declStart >= 0) {
-		var declOpen = code.indexOf("[", declStart) + 1;
-		var declClose = code.indexOf("]", declOpen);
-		if (declOpen > 0 && declClose > declOpen)
-			code =
-				code.slice(0, declOpen) + String(tableSize) + code.slice(declClose);
-	}
-	var rng = findInitializerRange(code, declStart);
-	if (rng) {
-		var header = code.slice(0, rng.open + 1);
-		var footer = code.slice(rng.close);
-		code = header + "\n\t\t" + tableBody + "\n\t" + footer;
-	}
-	var useStart = code.indexOf("int stringIndex");
-	var startIdx =
-		useStart >= 0
-			? code.indexOf("HASH_TABLE[", useStart)
-			: code.lastIndexOf("HASH_TABLE[");
-	if (startIdx >= 0) {
-		var bOpen = code.indexOf("[", startIdx);
-		var bClose = findMatchingSquare(code, bOpen);
-		if (bOpen >= 0 && bClose > bOpen) {
-			var cExpr = theHashMaker
-				.generateCOutput("${hashExpression}", found)
-				.trim();
-			code = code.slice(0, bOpen + 1) + cExpr + code.slice(bClose);
-		}
-	}
-	var builtIdx = code.indexOf("/* Built with QuickHashGen");
-	if (builtIdx >= 0) {
-		var insertPos = code.indexOf("\n", builtIdx);
-		if (insertPos < 0) insertPos = code.length;
-		else insertPos++;
-		if (code.substr(insertPos, 8) === "// Seed:") {
-			var lineEnd = code.indexOf("\n", insertPos);
-			if (lineEnd < 0) lineEnd = code.length;
-			code =
-				code.slice(0, insertPos) +
-				"// Seed: " +
-				currentSeed +
-				code.slice(lineEnd);
-		} else {
-			code =
-				code.slice(0, insertPos) +
-				"// Seed: " +
-				currentSeed +
-				"\n" +
-				code.slice(insertPos);
-		}
-	}
-	elements.editor.value = code;
-	lastInputText = elements.editor.value;
+	var updated = updateCCodeWithSolution(code, theHashMaker, found, {
+		zeroTerminated: elements.requireZeroTermination.checked,
+		functionName: "<<findSomething>>",
+		header: "/* Built with QuickHashGen */\n",
+		includeSeedComment: true,
+		includeAssert: true,
+	});
+	elements.editor.value = updated;
+	lastInputText = updated;
 }
 function resetSearch() {
 	theHashMaker = null;
@@ -334,12 +226,14 @@ function resetSearch() {
 		strings = [];
 	}
 	if (strings.length > 0) {
-		for (minSize = 1; strings.length > minSize; minSize <<= 1);
-		maxSize = minSize * 8;
-		var m = /\/\/\s*Seed:\s*(\d+)/.exec(lastInputText);
-		currentSeed = m
-			? parseInt(m[1], 10) >>> 0
-			: (Math.random() * 0x100000000) >>> 0;
+		var bounds = computeTableBounds(strings);
+		minSize = bounds.minSize;
+		maxSize = bounds.maxSize;
+		var parsedSeed = parseSeedComment(lastInputText);
+		currentSeed =
+			typeof parsedSeed === "number"
+				? parsedSeed >>> 0
+				: (Math.random() * 0x100000000) >>> 0;
 		theHashMaker = new QuickHashGen(
 			strings,
 			minSize,
@@ -447,10 +341,18 @@ function intervalFunction() {
 		if (theHashMaker !== null) {
 			var timeOut = Date.now() + 100;
 			while (Date.now() - timeOut < 0) {
-				var complexity =
-					theHashMaker.randomInt(best === null ? 32 : best.complexity) + 1;
-				var iters = Math.max(200 / strings.length, 1);
-				var found = theHashMaker.search(complexity, iters);
+				var rng = {
+					nextInt: function (m) {
+						return theHashMaker.randomInt(m);
+					},
+				};
+				var found = scheduleStep(
+					theHashMaker,
+					best,
+					rng,
+					strings.length,
+					undefined,
+				);
 				if (found !== null) {
 					if (
 						best === null ||
@@ -500,18 +402,28 @@ function rewriteZeroTerminationMode(code, zeroTerminated) {
 				"\t// zero-termination not expected\n\t// assert(s[n] == '\\0');",
 			);
 		}
-		// 3) Switch return line
-		if (zeroTerminated) {
-			code = code.replace(
-				/return\s*\(stringIndex\s*>=\s*0\s*&&\s*strncmp\(s,/m,
-				"return (stringIndex >= 0 && strcmp(s, STRINGS[stringIndex]) == 0) ? stringIndex : -1;",
-			);
-		} else {
-			code = code.replace(
-				/return\s*\(stringIndex\s*>=\s*0\s*&&\s*strcmp\(s,/m,
-				"return (stringIndex >= 0 && strncmp(s, STRINGS[stringIndex], n) == 0 && STRINGS[stringIndex][n] == 0) ? stringIndex : -1;",
-			);
-		}
+		// 3) Replace the entire return statement deterministically without regex pitfalls.
+		(function () {
+			var anchor = code.indexOf("int stringIndex");
+			var searchFrom = anchor >= 0 ? anchor : 0;
+			var rStart = code.indexOf("return", searchFrom);
+			if (rStart < 0) return; // nothing to rewrite
+			var lineStart = code.lastIndexOf("\n", rStart);
+			lineStart = lineStart < 0 ? 0 : lineStart + 1;
+			var i = lineStart;
+			while (i < rStart && (code[i] === "\t" || code[i] === " ")) i++;
+			var indent = code.slice(lineStart, i);
+			var retEnd = code.indexOf(";", rStart);
+			if (retEnd < 0) return;
+			var after = retEnd + 1;
+			while (after < code.length && (code[after] === "\t" || code[after] === " ")) after++;
+			if (after < code.length && code[after] === "\r") after++;
+			if (after < code.length && code[after] === "\n") after++;
+			var newReturn = zeroTerminated
+				? "return (stringIndex >= 0 && strcmp(s, STRINGS[stringIndex]) == 0) ? stringIndex : -1;"
+				: "return (stringIndex >= 0 && strncmp(s, STRINGS[stringIndex], n) == 0 && STRINGS[stringIndex][n] == 0) ? stringIndex : -1;";
+			code = code.slice(0, lineStart) + indent + newReturn + "\n" + code.slice(after);
+		})();
 	} catch (err) {
 		console.error("Error rewriting zero-termination mode", err);
 	}
