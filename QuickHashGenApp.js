@@ -1,37 +1,37 @@
 "use strict";
 // ===== Output templates =====
 var ZERO_TERMINATED_TEMPLATE =
-        "/* Built with QuickHashGen */\n" +
-        "// Seed: ${seed}\n" +
-        "static int <<findSomething>>(int n /* string length */, const char* s /* string (zero terminated) */) {\n" +
-        "\tstatic const char* STRINGS[${stringCount}] = {\n" +
-        "\t\t${stringList}\n" +
-        "\t};\n" +
-        "\tstatic const int HASH_TABLE[${tableSize}] = {\n" +
-        "\t\t${tableData}\n" +
-        "\t};\n" +
-        "\tconst unsigned char* p = (const unsigned char*) s;\n" +
-        "\tassert(s[n] == '\\0');\n" +
-        "\tif (n < ${minLength} || n > ${maxLength}) return -1;\n" +
-        "\tint stringIndex = HASH_TABLE[${hashExpression}];\n" +
-        "\treturn (stringIndex >= 0 && strcmp(s, STRINGS[stringIndex]) == 0) ? stringIndex : -1;\n" +
-        "}";
+	"/* Built with QuickHashGen */\n" +
+	"// Seed: ${seed}\n" +
+	"static int <<findSomething>>(int n /* string length */, const char* s /* string (zero terminated) */) {\n" +
+	"\tstatic const char* STRINGS[${stringCount}] = {\n" +
+	"\t\t${stringList}\n" +
+	"\t};\n" +
+	"\tstatic const int HASH_TABLE[${tableSize}] = {\n" +
+	"\t\t${tableData}\n" +
+	"\t};\n" +
+	"\tconst unsigned char* p = (const unsigned char*) s;\n" +
+	"\tassert(s[n] == '\\0');\n" +
+	"\tif (n < ${minLength} || n > ${maxLength}) return -1;\n" +
+	"\tint stringIndex = HASH_TABLE[${hashExpression}];\n" +
+	"\treturn (stringIndex >= 0 && strcmp(s, STRINGS[stringIndex]) == 0) ? stringIndex : -1;\n" +
+	"}";
 var NON_ZERO_TERMINATED_TEMPLATE =
-        "/* Built with QuickHashGen */\n" +
-        "// Seed: ${seed}\n" +
-        "static int <<findSomething>>(int n /* string length */, const char* s /* string (zero termination not required) */) {\n" +
-        "\tstatic const char* STRINGS[${stringCount}] = {\n" +
-        "\t\t${stringList}\n" +
-        "\t};\n" +
-        "\tstatic const int HASH_TABLE[${tableSize}] = {\n" +
-        "\t\t${tableData}\n" +
-        "\t};\n" +
-        "\tconst unsigned char* p = (const unsigned char*) s;\n" +
-        "\t// zero-termination not expected\n" +
-        "\tif (n < ${minLength} || n > ${maxLength}) return -1;\n" +
-        "\tint stringIndex = HASH_TABLE[${hashExpression}];\n" +
-        "\treturn (stringIndex >= 0 && strncmp(s, STRINGS[stringIndex], n) == 0 && STRINGS[stringIndex][n] == 0) ? stringIndex : -1;\n" +
-        "}";
+	"/* Built with QuickHashGen */\n" +
+	"// Seed: ${seed}\n" +
+	"static int <<findSomething>>(int n /* string length */, const char* s /* string (zero termination not required) */) {\n" +
+	"\tstatic const char* STRINGS[${stringCount}] = {\n" +
+	"\t\t${stringList}\n" +
+	"\t};\n" +
+	"\tstatic const int HASH_TABLE[${tableSize}] = {\n" +
+	"\t\t${tableData}\n" +
+	"\t};\n" +
+	"\tconst unsigned char* p = (const unsigned char*) s;\n" +
+	"\t// zero-termination not expected\n" +
+	"\tif (n < ${minLength} || n > ${maxLength}) return -1;\n" +
+	"\tint stringIndex = HASH_TABLE[${hashExpression}];\n" +
+	"\treturn (stringIndex >= 0 && strncmp(s, STRINGS[stringIndex], n) == 0 && STRINGS[stringIndex][n] == 0) ? stringIndex : -1;\n" +
+	"}";
 // ===== DOM wiring & state =====
 var HTML_ELEMENTS = [
 	"editor",
@@ -188,10 +188,10 @@ function findMatchingSquare(code, openIndex) {
 	return -1;
 }
 
-function detectEvalAllowed(){
+function detectEvalAllowed() {
 	try {
 		var f = eval("(function(n,w){return (n|0)+(w[0]|0);})");
-		return f(1,[2]) === 3;
+		return f(1, [2]) === 3;
 	} catch (err) {
 		console.error("eval not allowed", err);
 		return false;
@@ -289,9 +289,18 @@ function applyBestToEditor(found) {
 		if (code.substr(insertPos, 8) === "// Seed:") {
 			var lineEnd = code.indexOf("\n", insertPos);
 			if (lineEnd < 0) lineEnd = code.length;
-			code = code.slice(0, insertPos) + "// Seed: " + currentSeed + code.slice(lineEnd);
+			code =
+				code.slice(0, insertPos) +
+				"// Seed: " +
+				currentSeed +
+				code.slice(lineEnd);
 		} else {
-			code = code.slice(0, insertPos) + "// Seed: " + currentSeed + "\n" + code.slice(insertPos);
+			code =
+				code.slice(0, insertPos) +
+				"// Seed: " +
+				currentSeed +
+				"\n" +
+				code.slice(insertPos);
 		}
 	}
 	elements.editor.value = code;
@@ -316,35 +325,37 @@ function resetSearch() {
 		elements.forceEval &&
 		elements.forceEval.checked
 	);
-        updateModeLabel();
-        try {
-                strings = parseStringsFromEditor(lastInputText);
-        } catch (err) {
- 		           console.error("Failed to parse strings from editor", err);
-               strings = [];
-        }
-        if (strings.length > 0) {
-                for (minSize = 1; strings.length > minSize; minSize <<= 1);
-                maxSize = minSize * 8;
-                var m = /\/\/\s*Seed:\s*(\d+)/.exec(lastInputText);
-                currentSeed = m ? (parseInt(m[1], 10) >>> 0) : ((Math.random() * 0x100000000) >>> 0);
-                theHashMaker = new QuickHashGen(
-                        strings,
-                        minSize,
-                        maxSize,
-                        elements.requireZeroTermination.checked,
-                        elements.allowMultiplications.checked,
-                        elements.allowLength.checked,
-                        ENGINE_USE_EVAL,
-                        elements.evalTest && elements.evalTest.checked,
-                        currentSeed,
-                );
-                elements.hashes.textContent = "";
-                elements.testedCount.textContent = "0";
-                elements.solutionsCount.textContent = "0";
-                elements.complexity.textContent = "?";
-                elements.tableSize.textContent = "?";
-        }
+	updateModeLabel();
+	try {
+		strings = parseStringsFromEditor(lastInputText);
+	} catch (err) {
+		console.error("Failed to parse strings from editor", err);
+		strings = [];
+	}
+	if (strings.length > 0) {
+		for (minSize = 1; strings.length > minSize; minSize <<= 1);
+		maxSize = minSize * 8;
+		var m = /\/\/\s*Seed:\s*(\d+)/.exec(lastInputText);
+		currentSeed = m
+			? parseInt(m[1], 10) >>> 0
+			: (Math.random() * 0x100000000) >>> 0;
+		theHashMaker = new QuickHashGen(
+			strings,
+			minSize,
+			maxSize,
+			elements.requireZeroTermination.checked,
+			elements.allowMultiplications.checked,
+			elements.allowLength.checked,
+			ENGINE_USE_EVAL,
+			elements.evalTest && elements.evalTest.checked,
+			currentSeed,
+		);
+		elements.hashes.textContent = "";
+		elements.testedCount.textContent = "0";
+		elements.solutionsCount.textContent = "0";
+		elements.complexity.textContent = "?";
+		elements.tableSize.textContent = "?";
+	}
 }
 function updateCodeMetadata() {
 	try {
@@ -408,24 +419,24 @@ function updateCodeMetadata() {
 	}
 }
 function updateOutput() {
-        if (best !== null) {
-                try {
-                        applyBestToEditor(best);
-	            	} catch (err) {
-			            console.error("Failed to apply best solution", err);
-		            }
-                var s = "";
-                for (var i = 0; i < strings.length; ++i)
-                        s +=
-                                escapeCString(strings[i]) +
-                                " : " +
-                                (best.hashes[i] & (best.table.length - 1)) +
-                                " (" +
-                                best.hashes[i] +
-                                ")\n";
-                elements.hashes.textContent = s;
-        } else elements.hashes.textContent = "";
-        updateModeLabel();
+	if (best !== null) {
+		try {
+			applyBestToEditor(best);
+		} catch (err) {
+			console.error("Failed to apply best solution", err);
+		}
+		var s = "";
+		for (var i = 0; i < strings.length; ++i)
+			s +=
+				escapeCString(strings[i]) +
+				" : " +
+				(best.hashes[i] & (best.table.length - 1)) +
+				" (" +
+				best.hashes[i] +
+				")\n";
+		elements.hashes.textContent = s;
+	} else elements.hashes.textContent = "";
+	updateModeLabel();
 }
 function intervalFunction() {
 	try {
