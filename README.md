@@ -19,30 +19,30 @@ node QuickHashGenCLI.js [options] [input-file]
 
 Options:
 
-- `-h`, `--help` &ndash; display usage information.
-- `--tests N` &ndash; number of expressions to try (default `100000`). A larger value
+- `-h`, `--help`: display usage information.
+- `--tests N`: number of expressions to try (default `100000`). A larger value
   increases the search space and the odds of discovering a lower-complexity hash
   at the cost of longer runtime.
-- `--no-multiplications` &ndash; disallow multiplication instructions in the generated
+- `--no-multiplications`: disallow multiplication instructions in the generated
   hash expression. Useful for targets where multiplies are expensive or
   unavailable.
-- `--no-length` &ndash; prevent use of the string length variable `n` in the hash
+- `--no-length`: prevent use of the string length variable `n` in the hash
   expression. This keeps the hash based strictly on character data so strings of
   differing lengths don't simply hash to their length. The generated lookup still
   receives `n` for bounds checking.
-- `--no-zero-termination` &ndash; generate a lookup function that does not require the
+- `--no-zero-termination`: generate a lookup function that does not require the
   input strings to be zero-terminated. The resulting C template uses `strncmp`
   and expects the caller to supply the string length.
-- `--eval-test` &ndash; after a candidate expression is found, evaluate it on all input
+- `--eval-test`: after a candidate expression is found, evaluate it on all input
   strings using the selected engine to verify that it maps each string to the
   expected index. Adds runtime but provides a safety check when modifying the
   algorithm.
-- `--force-eval` &ndash; use the `eval` engine instead of the default `Function`
+- `--force-eval`: use the `eval` engine instead of the default `Function`
   constructor when searching and testing. Mirrors the HTML interface’s "Use eval
   engine" checkbox and can influence performance depending on the environment.
-- `--bench` &ndash; run a simple benchmark comparing the `Function` constructor and
+- `--bench`: run a simple benchmark comparing the `Function` constructor and
   `eval` engines after a solution is found.
-- `--seed N` &ndash; seed all internal randomness with a single 32-bit value for
+- `--seed N`: seed all internal randomness with a single 32-bit value for
   fully deterministic output.
 
 ### Input formats
@@ -155,33 +155,62 @@ console.log(cExpr);
 `QuickHashGenCore.js` exports a handful of helpers and the `QuickHashGen`
 class for programmatic integration:
 
-- **`QuickHashGen`** – the core search engine. The constructor accepts
+- **`QuickHashGen`**: the core search engine. The constructor accepts
   `(strings, minTableSize, maxTableSize, zeroTerminated,
 allowMultiplication, allowLength, useEvalEngine=false,
 evalTest=false, seed0?, seed1?)`.
   If `seed0` is omitted the PRNG is seeded randomly; providing `seed0`
   (and optionally `seed1`) yields deterministic output.
   Methods include:
-  - `search(complexity, iterations)` – explore random expressions and return
+  - `search(complexity, iterations)`: explore random expressions and return
     the first collision-free solution or `null`.
-  - `getTestedCount()` – total number of expressions evaluated so far.
-  - `randomInt(max)` – draw a pseudo-random integer in `[0, max)`.
-  - `generateCExpression(solution)` – build a C hash expression string.
-  - `generateJSExpression(solution)` – build a JavaScript hash expression string.
-  - `generateJSEvaluator(solution)` – build a CSP‑safe evaluator function.
-  - `generateCOutput(template, solution)` – populate a C template using a
+  - `getTestedCount()`: total number of expressions evaluated so far.
+  - `randomInt(max)`: draw a pseudo-random integer in `[0, max)`.
+  - `generateCExpression(solution)`: build a C hash expression string.
+  - `generateJSExpression(solution)`: build a JavaScript hash expression string.
+  - `generateJSEvaluator(solution)`: build a CSP-safe evaluator function.
+  - `generateCOutput(template, solution)`: populate a C template using a
     solution object returned by `search` (internally uses `generateCExpression`).
-- **`parseQuickHashGenInput(text)`** – parse newline or C‑style quoted
+- **`parseQuickHashGenInput(text)`**: parse newline or C-style quoted
   strings into an array, mirroring CLI input handling.
 - **`stringListToC(strings, columns, prefix)`** and
-  **`numberListToC(numbers, columns, base, prefix)`** – format arrays as C
+  **`numberListToC(numbers, columns, base, prefix)`**: format arrays as C
   initializers.
-- **`toHex(i, length)`** – format a number as a zero-padded hexadecimal
+- **`toHex(i, length)`**: format a number as a zero-padded hexadecimal
   string.
-- **`parseCString`** / **`escapeCString`** – convert between C‑style quoted
+- **`parseCString`** / **`escapeCString`**: convert between C-style quoted
   strings and raw JavaScript strings.
-- **`XorshiftPRNG2x32`** – deterministic pseudo‑random number generator used
+- **`XorshiftPRNG2x32`**: deterministic pseudo-random number generator used
   during the search.
+
+### Cost model
+
+To break ties between expressions of the same complexity, QuickHashGen
+tracks a simple runtime cost for each abstract syntax tree (AST) node. The
+total cost combines these node costs with a penalty for the hash table size,
+and the search prefers solutions with the lowest cost.
+
+Base node costs reflect their relative expense:
+
+- constant value: `8`
+- length variable `n`: `16`
+- character read within the known string length `p[i]`: `32`
+- character read beyond the input length guard `p[i]`: `48`
+
+Binary operators add the cost of their operands plus an operator cost:
+
+- shift (`<<`/`>>>`): `+1`
+- addition or subtraction: `+2`
+- XOR: `+1`
+- multiplication: `+4`
+
+Hash table size also adds to the total cost: each power-of-two increase adds
+`16`. For example, a table with `256` entries (`2^8`) contributes `128`.
+
+When multiple expressions hash all strings without collisions and have the
+same complexity, the generator chooses the one with the lowest total cost,
+favoring cheaper operations like constants over more expensive character
+lookups and large tables.
 
 ### Debug mode
 

@@ -382,6 +382,7 @@ function QuickHashGen(
 				fn: function (n, w) {
 					return n | 0;
 				},
+				cost: 16,
 			};
 		}
 		function leaf_const() {
@@ -394,6 +395,7 @@ function QuickHashGen(
 				fn: function () {
 					return k;
 				},
+				cost: 8,
 			};
 		}
 		function leaf_w_in() {
@@ -405,6 +407,7 @@ function QuickHashGen(
 				fn: function (n, w) {
 					return w[idx] | 0;
 				},
+				cost: 32,
 			};
 		}
 		function leaf_w_out() {
@@ -417,6 +420,7 @@ function QuickHashGen(
 				fn: function (n, w) {
 					return w[i] | 0;
 				},
+				cost: 48,
 			};
 		}
 		function needsPar(a, prec) {
@@ -428,7 +432,7 @@ function QuickHashGen(
 		function wrapJ(a, prec) {
 			return needsPar(a, prec) ? "(" + a.js + ")" : a.js;
 		}
-		function bin(a, b, op, prec, evalFn) {
+		function bin(a, b, op, prec, evalFn, opCost) {
 			var cLeft = wrapC(a, prec);
 			var needRightPar = op === "-" && b.prec === prec;
 			var cRight = needRightPar ? "(" + b.c + ")" : wrapC(b, prec);
@@ -443,6 +447,7 @@ function QuickHashGen(
 				fn: function (n, w) {
 					return evalFn(a.fn(n, w), b.fn(n, w));
 				},
+				cost: a.cost + b.cost + opCost,
 			};
 		}
 		// Shifts in the generated expressions need to behave identically
@@ -451,7 +456,7 @@ function QuickHashGen(
 		// Using JavaScript's arithmetic ">>" caused discrepancies
 		// between the JS verification and the generated C program for
 		// certain inputs.
-		function sh(a, dir, shamt) {
+		function sh(a, dir, shamt, opCost) {
 			var j, c;
 			if (dir === "<<") {
 				j = wrapJ(a, 1) + " << " + shamt;
@@ -464,6 +469,7 @@ function QuickHashGen(
 						var v = a.fn(n, w) | 0;
 						return (v << shamt) | 0;
 					},
+					cost: a.cost + opCost,
 				};
 			} else {
 				j = wrapJ(a, 1) + " >>> " + shamt;
@@ -476,10 +482,11 @@ function QuickHashGen(
 						var v = a.fn(n, w) | 0;
 						return (v >>> shamt) | 0;
 					},
+					cost: a.cost + opCost,
 				};
 			}
 		}
-		function mul(a, b) {
+		function mul(a, b, opCost) {
 			var c = wrapC(a, 3) + " * " + wrapC(b, 3);
 			var j = "Math.imul(" + a.js + ", " + b.js + ")";
 			return {
@@ -489,11 +496,12 @@ function QuickHashGen(
 				fn: function (n, w) {
 					return Math.imul(a.fn(n, w), b.fn(n, w));
 				},
+				cost: a.cost + b.cost + opCost,
 			};
 		}
 		var OPS = [
 			[
-				4,
+				16,
 				1,
 				1,
 				function () {
@@ -501,7 +509,7 @@ function QuickHashGen(
 				},
 			],
 			[
-				4,
+				8,
 				1,
 				1,
 				function () {
@@ -509,7 +517,7 @@ function QuickHashGen(
 				},
 			],
 			[
-				4,
+				32,
 				1,
 				1,
 				function () {
@@ -517,7 +525,7 @@ function QuickHashGen(
 				},
 			],
 			[
-				4,
+				48,
 				2,
 				2,
 				function () {
@@ -531,7 +539,7 @@ function QuickHashGen(
 				function (c) {
 					var a = rndExpr(c - 1, 1);
 					var shv = (rnd.nextInt(31) + 1) | 0;
-					return sh(a, "<<", shv);
+					return sh(a, "<<", shv, 1);
 				},
 			],
 			[
@@ -541,7 +549,7 @@ function QuickHashGen(
 				function (c) {
 					var a = rndExpr(c - 1, 1);
 					var shv = (rnd.nextInt(31) + 1) | 0;
-					return sh(a, ">>", shv);
+					return sh(a, ">>", shv, 1);
 				},
 			],
 			[
@@ -552,9 +560,16 @@ function QuickHashGen(
 					var b = rnd.nextInt(c - 1) + 1;
 					var L = rndExpr(b, 2),
 						R = rndExpr(c - b, 2);
-					return bin(L, R, "+", 2, function (x, y) {
-						return (x + y) | 0;
-					});
+					return bin(
+						L,
+						R,
+						"+",
+						2,
+						function (x, y) {
+							return (x + y) | 0;
+						},
+						2,
+					);
 				},
 			],
 			[
@@ -565,33 +580,47 @@ function QuickHashGen(
 					var b = rnd.nextInt(c - 1) + 1;
 					var L = rndExpr(b, 2),
 						R = rndExpr(c - b, 3);
-					return bin(L, R, "-", 2, function (x, y) {
-						return (x - y) | 0;
-					});
+					return bin(
+						L,
+						R,
+						"-",
+						2,
+						function (x, y) {
+							return (x - y) | 0;
+						},
+						2,
+					);
 				},
 			],
 			[
-				0,
+				1,
 				2,
 				Infinity,
 				function (c) {
 					var b = rnd.nextInt(c - 1) + 1;
 					var L = rndExpr(b, 0),
 						R = rndExpr(c - b, 0);
-					return bin(L, R, "^", 0, function (x, y) {
-						return (x ^ y) | 0;
-					});
+					return bin(
+						L,
+						R,
+						"^",
+						0,
+						function (x, y) {
+							return (x ^ y) | 0;
+						},
+						1,
+					);
 				},
 			],
 			[
-				3,
+				4,
 				2,
 				Infinity,
 				function (c) {
 					var b = rnd.nextInt(c - 1) + 1;
 					var L = rndExpr(b, 3),
 						R = rndExpr(c - b, 3);
-					return mul(L, R);
+					return mul(L, R, 4);
 				},
 			],
 		];
@@ -613,6 +642,7 @@ function QuickHashGen(
 			fn: function (n, w) {
 				return root.fn(n, w) | 0;
 			},
+			cost: root.cost,
 		};
 	}
 
@@ -653,6 +683,7 @@ function QuickHashGen(
 				false,
 			);
 			var expr = exprObj.js;
+			var exprCost = exprObj.cost;
 			if (complexity >= 4 || !(expr in tried[complexity])) {
 				if (complexity < 4) {
 					tried[complexity][expr] = true;
@@ -703,8 +734,11 @@ function QuickHashGen(
 						if (DEBUG) assert(table[hash] === -1, "table[hash] === -1");
 						table[hash] = j;
 					}
+					var tableCost = 0;
+					for (var t = tableSize; t > 1; t >>= 1) tableCost += 16;
 					var result = {
 						complexity: complexity,
+						cost: exprCost + tableCost,
 						prng: prngCopy,
 						table: table,
 						hashes: hashes,
