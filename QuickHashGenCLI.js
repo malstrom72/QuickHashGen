@@ -36,6 +36,10 @@ for (let i = 0; i < args.length; ++i) {
     const a = args[i];
     if (a === '--tests' && i + 1 < args.length) {
         opts.tests = parseInt(args[++i], 10);
+        if (!Number.isFinite(opts.tests) || opts.tests < 0) {
+            printUsage();
+            process.exit(1);
+        }
     } else if (a === '--no-multiplications') {
         opts.allowMultiplications = false;
     } else if (a === '--no-length') {
@@ -50,6 +54,10 @@ for (let i = 0; i < args.length; ++i) {
         opts.bench = true;
     } else if (a === '--seed' && i + 1 < args.length) {
         opts.seed = parseInt(args[++i], 10);
+        if (!Number.isFinite(opts.seed) || opts.seed < 0) {
+            printUsage();
+            process.exit(1);
+        }
     } else if (a[0] === '-') {
         printUsage();
         process.exit(1);
