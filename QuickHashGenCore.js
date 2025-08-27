@@ -493,14 +493,14 @@ function QuickHashGen(strings, minTableSize, maxTableSize, zeroTerminated, allow
 		while (input !== '') {
 			var index = input.indexOf('${');
 			index = (index < 0 ? input.length : index);
-			output += input.substr(0, index);
-			input = input.substr(index);
+			output += input.slice(0, index);
+			input = input.slice(index);
 			if (input !== '') {
-				var pre = output.substr(output.lastIndexOf("\n") + 1);
+				var pre = output.slice(output.lastIndexOf("\n") + 1);
 				index = input.indexOf('}');
 				index = (index < 0 ? input.length : index);
 				output += replaceMap[input.slice(2, index)](pre);
-				input = input.substr(index + 1);
+				input = input.slice(index + 1);
 			}
 		}
 
@@ -517,7 +517,7 @@ function parseQuickHashGenInput(text) {
 		if (s.length && (s[0] === '\"' || s[0] === '\'')) {
 			var o = 0;
 			while (o < s.length) {
-				var parsed = parseCString(s.substr(o));
+				var parsed = parseCString(s.slice(o));
 				strings.push(parsed[0]);
 				o += parsed[1];
 				while (" \t\v\n\r".indexOf(s[o]) >= 0) ++o;
