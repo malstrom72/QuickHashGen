@@ -316,35 +316,35 @@ function resetSearch() {
 		elements.forceEval &&
 		elements.forceEval.checked
 	);
-	updateModeLabel();
-	try {
-		strings = parseStringsFromEditor(lastInputText);
-	} catch (err) {
-		console.error("Failed to parse strings from editor", err);
-		strings = [];
-	}
-	if (strings.length > 0) {
-		for (minSize = 1; strings.length > minSize; minSize <<= 1);
-		maxSize = minSize * 8;
-		var m = /\/\/\s*Seed:\s*(\d+)/.exec(lastInputText);
-		currentSeed = m ? (parseInt(m[1], 10) >>> 0) : ((Math.random() * 0x100000000) >>> 0);
-		theHashMaker = new QuickHashGen(
-			strings,
-			minSize,
-			maxSize,
-			elements.requireZeroTermination.checked,
-			elements.allowMultiplications.checked,
-			elements.allowLength.checked,
-			ENGINE_USE_EVAL,
-			elements.evalTest && elements.evalTest.checked,
-			currentSeed,
-		);
-		elements.hashes.innerHTML = "";
-		elements.testedCount.innerHTML = "0";
-		elements.solutionsCount.innerHTML = "0";
-		elements.complexity.innerHTML = "?";
-		elements.tableSize.innerHTML = "?";
-	}
+        updateModeLabel();
+        try {
+                strings = parseStringsFromEditor(lastInputText);
+        } catch (err) {
+ 		           console.error("Failed to parse strings from editor", err);
+               strings = [];
+        }
+        if (strings.length > 0) {
+                for (minSize = 1; strings.length > minSize; minSize <<= 1);
+                maxSize = minSize * 8;
+                var m = /\/\/\s*Seed:\s*(\d+)/.exec(lastInputText);
+                currentSeed = m ? (parseInt(m[1], 10) >>> 0) : ((Math.random() * 0x100000000) >>> 0);
+                theHashMaker = new QuickHashGen(
+                        strings,
+                        minSize,
+                        maxSize,
+                        elements.requireZeroTermination.checked,
+                        elements.allowMultiplications.checked,
+                        elements.allowLength.checked,
+                        ENGINE_USE_EVAL,
+                        elements.evalTest && elements.evalTest.checked,
+                        currentSeed,
+                );
+                elements.hashes.textContent = "";
+                elements.testedCount.textContent = "0";
+                elements.solutionsCount.textContent = "0";
+                elements.complexity.textContent = "?";
+                elements.tableSize.textContent = "?";
+        }
 }
 function updateCodeMetadata() {
 	try {
@@ -408,24 +408,24 @@ function updateCodeMetadata() {
 	}
 }
 function updateOutput() {
-	if (best !== null) {
-		try {
-			applyBestToEditor(best);
-		} catch (err) {
-			console.error("Failed to apply best solution", err);
-		}
-		var s = "";
-		for (var i = 0; i < strings.length; ++i)
-			s +=
-				escapeCString(strings[i]) +
-				" : " +
-				(best.hashes[i] & (best.table.length - 1)) +
-				" (" +
-				best.hashes[i] +
-				")\n";
-		elements.hashes.innerHTML = s;
-	} else elements.hashes.innerHTML = "";
-	updateModeLabel();
+        if (best !== null) {
+                try {
+                        applyBestToEditor(best);
+	            	} catch (err) {
+			            console.error("Failed to apply best solution", err);
+		            }
+                var s = "";
+                for (var i = 0; i < strings.length; ++i)
+                        s +=
+                                escapeCString(strings[i]) +
+                                " : " +
+                                (best.hashes[i] & (best.table.length - 1)) +
+                                " (" +
+                                best.hashes[i] +
+                                ")\n";
+                elements.hashes.textContent = s;
+        } else elements.hashes.textContent = "";
+        updateModeLabel();
 }
 function intervalFunction() {
 	try {

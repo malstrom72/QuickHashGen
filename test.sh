@@ -2,8 +2,16 @@
 set -e
 
 node tests/parseQuickHashGenInput.test.js
+node tests/parseCString.test.js
 
 node QuickHashGenCLI.js --seed 1 --tests 100 tests/input1.txt > tests/out1.c
+# help flag should print usage and succeed
+node QuickHashGenCLI.js --help >tests/help.log 2>&1
+grep -q 'Usage:' tests/help.log
+rm tests/help.log
+node QuickHashGenCLI.js -h >tests/help.log 2>&1
+grep -q 'Usage:' tests/help.log
+rm tests/help.log
 # invalid option values should print usage and fail
 if node QuickHashGenCLI.js --tests -1 tests/input1.txt >/dev/null 2>tests/err.log; then
     echo "Expected failure for --tests -1" >&2
