@@ -41,8 +41,8 @@ Options:
   engine" checkbox and can influence performance depending on the environment.
 * `--bench` &ndash; run a simple benchmark comparing the `Function` constructor and
   `eval` engines after a solution is found.
- * `--seed N` &ndash; seed the internal PRNG for deterministic output with a single
-   32-bit value.
+ * `--seed N` &ndash; seed all internal randomness with a single 32-bit value for
+   fully deterministic output.
 
 ### Input formats
 
