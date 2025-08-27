@@ -89,7 +89,9 @@ if (elements.requireZeroTermination)
 				);
 				lastInputText = elements.editor.value;
 			}
-		} catch (_) {}
+		} catch (err) {
+			console.error("Failed to rewrite zero-termination mode", err);
+		}
 		if (isRunning) {
 			isRunning = false;
 			elements.startPause.textContent = "Start";
@@ -106,13 +108,13 @@ if (elements.forceEval)
 	});
 var currentTemplate = ZERO_TERMINATED_TEMPLATE;
 var theHashMaker = null,
-        lastInputText = elements.editor.value,
-        solutionsCounter = 0,
-        strings = [],
-        minSize,
-        maxSize,
-        best = null,
-        currentSeed = 0;
+	lastInputText = elements.editor.value,
+	solutionsCounter = 0,
+	strings = [],
+	minSize,
+	maxSize,
+	best = null,
+	currentSeed = 0;
 var ENGINE_USE_EVAL = false;
 var EVAL_ALLOWED = false;
 // ===== Controls =====
@@ -187,46 +189,54 @@ function findMatchingSquare(code, openIndex) {
 }
 
 function detectEvalAllowed(){
-  try {
-    var f = eval("(function(n,w){return (n|0)+(w[0]|0);})");
-    return f(1,[2]) === 3;
-  } catch (_) {
-    return false;
-  }
+	try {
+		var f = eval("(function(n,w){return (n|0)+(w[0]|0);})");
+		return f(1,[2]) === 3;
+	} catch (err) {
+		console.error("eval not allowed", err);
+		return false;
+	}
 }
 function stopAndReport(header, details) {
 	try {
 		isRunning = false;
 		if (elements.startPause) elements.startPause.textContent = "Start";
-	} catch (_) {}
+	} catch (err) {
+		console.error("Failed to update run state", err);
+	}
 	var msg = "[FAIL] " + header;
 	var body = "";
 	try {
 		body = "\n" + JSON.stringify(details, null, 2);
-	} catch (_) {
+	} catch (err) {
+		console.error("Failed to stringify details", err);
 		body = "\n" + String(details);
 	}
 	try {
 		var prev = elements.hashes.textContent || "";
 		elements.hashes.textContent = (prev ? prev + "\n" : "") + msg + body;
 		console.error("QuickHashGen failure:", header, details);
-	} catch (_) {}
+	} catch (err) {
+		console.error("Failed to report failure", err);
+	}
 }
 function updateModeLabel() {
-        try {
-                var base = elements.testStatus.textContent || "";
-                var core = base.split(" | ")[0];
-                var mode = ENGINE_USE_EVAL
-                        ? "eval"
-                        : EVAL_ALLOWED
-                                ? "csp-safe (manual)"
-                                : "csp-safe (CSP)";
-                var text = core + (core ? " | " : "") + "Mode: " + mode;
-                if (best && best.evalInfo) {
-                        text += " | Eval: OK (" + best.evalInfo.checked + " checked)";
-                }
-                elements.testStatus.textContent = text;
-        } catch (_) {}
+	try {
+		var base = elements.testStatus.textContent || "";
+		var core = base.split(" | ")[0];
+		var mode = ENGINE_USE_EVAL
+			? "eval"
+			: EVAL_ALLOWED
+				? "csp-safe (manual)"
+				: "csp-safe (CSP)";
+		var text = core + (core ? " | " : "") + "Mode: " + mode;
+		if (best && best.evalInfo) {
+			text += " | Eval: OK (" + best.evalInfo.checked + " checked)";
+		}
+		elements.testStatus.textContent = text;
+	} catch (err) {
+		console.error("Failed to update mode label", err);
+	}
 }
 function applyBestToEditor(found) {
 	var code = elements.editor.value || "";
@@ -261,31 +271,31 @@ function applyBestToEditor(found) {
 		useStart >= 0
 			? code.indexOf("HASH_TABLE[", useStart)
 			: code.lastIndexOf("HASH_TABLE[");
-        if (startIdx >= 0) {
-                var bOpen = code.indexOf("[", startIdx);
-                var bClose = findMatchingSquare(code, bOpen);
-                if (bOpen >= 0 && bClose > bOpen) {
-                        var cExpr = theHashMaker
-                                .generateCOutput("${hashExpression}", found)
-                                .trim();
-                        code = code.slice(0, bOpen + 1) + cExpr + code.slice(bClose);
-                }
-        }
-        var builtIdx = code.indexOf("/* Built with QuickHashGen");
-        if (builtIdx >= 0) {
-                var insertPos = code.indexOf("\n", builtIdx);
-                if (insertPos < 0) insertPos = code.length;
-                else insertPos++;
-                if (code.substr(insertPos, 8) === "// Seed:") {
-                        var lineEnd = code.indexOf("\n", insertPos);
-                        if (lineEnd < 0) lineEnd = code.length;
-                        code = code.slice(0, insertPos) + "// Seed: " + currentSeed + code.slice(lineEnd);
-                } else {
-                        code = code.slice(0, insertPos) + "// Seed: " + currentSeed + "\n" + code.slice(insertPos);
-                }
-        }
-        elements.editor.value = code;
-        lastInputText = elements.editor.value;
+	if (startIdx >= 0) {
+		var bOpen = code.indexOf("[", startIdx);
+		var bClose = findMatchingSquare(code, bOpen);
+		if (bOpen >= 0 && bClose > bOpen) {
+			var cExpr = theHashMaker
+				.generateCOutput("${hashExpression}", found)
+				.trim();
+			code = code.slice(0, bOpen + 1) + cExpr + code.slice(bClose);
+		}
+	}
+	var builtIdx = code.indexOf("/* Built with QuickHashGen");
+	if (builtIdx >= 0) {
+		var insertPos = code.indexOf("\n", builtIdx);
+		if (insertPos < 0) insertPos = code.length;
+		else insertPos++;
+		if (code.substr(insertPos, 8) === "// Seed:") {
+			var lineEnd = code.indexOf("\n", insertPos);
+			if (lineEnd < 0) lineEnd = code.length;
+			code = code.slice(0, insertPos) + "// Seed: " + currentSeed + code.slice(lineEnd);
+		} else {
+			code = code.slice(0, insertPos) + "// Seed: " + currentSeed + "\n" + code.slice(insertPos);
+		}
+	}
+	elements.editor.value = code;
+	lastInputText = elements.editor.value;
 }
 function resetSearch() {
 	theHashMaker = null;
@@ -309,8 +319,9 @@ function resetSearch() {
         updateModeLabel();
         try {
                 strings = parseStringsFromEditor(lastInputText);
-        } catch (_) {
-                strings = [];
+        } catch (err) {
+ 		           console.error("Failed to parse strings from editor", err);
+               strings = [];
         }
         if (strings.length > 0) {
                 for (minSize = 1; strings.length > minSize; minSize <<= 1);
@@ -392,13 +403,17 @@ function updateCodeMetadata() {
 		}
 		elements.editor.value = code;
 		lastInputText = elements.editor.value;
-	} catch (_) {}
+	} catch (err) {
+		console.error("Failed to update code metadata", err);
+	}
 }
 function updateOutput() {
         if (best !== null) {
                 try {
                         applyBestToEditor(best);
-                } catch (_) {}
+	            	} catch (err) {
+			            console.error("Failed to apply best solution", err);
+		            }
                 var s = "";
                 for (var i = 0; i < strings.length; ++i)
                         s +=
@@ -419,8 +434,8 @@ function intervalFunction() {
 		if (theHashMaker !== null) {
 			var timeOut = Date.now() + 100;
 			while (Date.now() - timeOut < 0) {
-                                var complexity =
-                                        theHashMaker.randomInt(best === null ? 32 : best.complexity) + 1;
+				var complexity =
+					theHashMaker.randomInt(best === null ? 32 : best.complexity) + 1;
 				var iters = Math.max(200 / strings.length, 1);
 				var found = theHashMaker.search(complexity, iters);
 				if (found !== null) {
@@ -442,6 +457,7 @@ function intervalFunction() {
 			elements.tableSize.textContent = best === null ? "?" : best.table.length;
 		}
 	} catch (err) {
+		console.error("Error in intervalFunction", err);
 		elements.hashes.textContent = String(err);
 		theHashMaker = null;
 		isRunning = false;
@@ -459,31 +475,33 @@ function rewriteZeroTerminationMode(code, zeroTerminated) {
 				? "/* string (zero terminated) */"
 				: "/* string (zero termination not required) */",
 		);
-                // 2) Toggle assert (preserve indentation and following line's tab)
-                if (zeroTerminated) {
-                        code = code.replace(
-                                /\t\/\/\s*zero-termination not expected\s*\n\t\/\/\s*assert\(s\[n\]\s*==\s*'\\0'\);/m,
-                                "\tassert(s[n] == '\\0');",
-                        );
-                } else {
-                        code = code.replace(
-                                /\tassert\(s\[n\]\s*==\s*'\\0'\);/m,
-                                "\t// zero-termination not expected\n\t// assert(s[n] == '\\0');",
-                        );
-                }
-                // 3) Switch return line
-                if (zeroTerminated) {
-                        code = code.replace(
-                                /return\s*\(stringIndex\s*>=\s*0\s*&&\s*strncmp\(s,/m,
-                                "return (stringIndex >= 0 && strcmp(s, STRINGS[stringIndex]) == 0) ? stringIndex : -1;",
-                        );
-                } else {
-                        code = code.replace(
-                                /return\s*\(stringIndex\s*>=\s*0\s*&&\s*strcmp\(s,/m,
-                                "return (stringIndex >= 0 && strncmp(s, STRINGS[stringIndex], n) == 0 && STRINGS[stringIndex][n] == 0) ? stringIndex : -1;",
-                        );
-                }
-	} catch (_) {}
+		// 2) Toggle assert (preserve indentation and following line's tab)
+		if (zeroTerminated) {
+			code = code.replace(
+				/\t\/\/\s*zero-termination not expected\s*\n\t\/\/\s*assert\(s\[n\]\s*==\s*'\\0'\);/m,
+				"\tassert(s[n] == '\\0');",
+			);
+		} else {
+			code = code.replace(
+				/\tassert\(s\[n\]\s*==\s*'\\0'\);/m,
+				"\t// zero-termination not expected\n\t// assert(s[n] == '\\0');",
+			);
+		}
+		// 3) Switch return line
+		if (zeroTerminated) {
+			code = code.replace(
+				/return\s*\(stringIndex\s*>=\s*0\s*&&\s*strncmp\(s,/m,
+				"return (stringIndex >= 0 && strcmp(s, STRINGS[stringIndex]) == 0) ? stringIndex : -1;",
+			);
+		} else {
+			code = code.replace(
+				/return\s*\(stringIndex\s*>=\s*0\s*&&\s*strcmp\(s,/m,
+				"return (stringIndex >= 0 && strncmp(s, STRINGS[stringIndex], n) == 0 && STRINGS[stringIndex][n] == 0) ? stringIndex : -1;",
+			);
+		}
+	} catch (err) {
+		console.error("Error rewriting zero-termination mode", err);
+	}
 	return code;
 }
 // ===== Self tests =====
@@ -528,15 +546,15 @@ function runSelfTests() {
 		if (typeof window.toggleRun !== "function") throw new Error("not global");
 	});
 	T("match HASH_TABLE brackets", function () {
-                var line =
-                        "int stringIndex = HASH_TABLE[((p[1] + n) & 31) ^ (9 < n ? p[9] : 0)];";
+		var line =
+			"int stringIndex = HASH_TABLE[((p[1] + n) & 31) ^ (9 < n ? p[9] : 0)];";
 		var i = line.indexOf("[");
 		var j = findMatchingSquare(line, i);
 		if (j !== line.length - 2) throw new Error("mismatch " + j);
 	});
 	T("rewrite zero-term off/on", function () {
-                var code0 =
-                        "static int f(int n, const char* s /* string (zero terminated) */) {\n\tconst unsigned char* p = (const unsigned char*) s;\n\tassert(s[n] == '\\0');\n\tif (n < 2) return -1;\n\tint stringIndex = 0;\n\treturn (stringIndex >= 0 && strcmp(s, STRINGS[stringIndex]) == 0) ? stringIndex : -1;\n}";
+		var code0 =
+			"static int f(int n, const char* s /* string (zero terminated) */) {\n\tconst unsigned char* p = (const unsigned char*) s;\n\tassert(s[n] == '\\0');\n\tif (n < 2) return -1;\n\tint stringIndex = 0;\n\treturn (stringIndex >= 0 && strcmp(s, STRINGS[stringIndex]) == 0) ? stringIndex : -1;\n}";
 		var off = rewriteZeroTerminationMode(code0, false);
 		if (off.indexOf("zero termination not required") < 0)
 			throw new Error("sig not switched");
@@ -548,8 +566,8 @@ function runSelfTests() {
 		var on = rewriteZeroTerminationMode(off, true);
 		if (on.indexOf("zero terminated") < 0) throw new Error("sig not restored");
 		if (on.indexOf("strcmp(") < 0) throw new Error("return not restored");
-                if (/\tassert\(s\[n\]\s*==\s*'\\0'\)/.test(on) === false)
-                        throw new Error("assert not restored");
+		if (/\tassert\(s\[n\]\s*==\s*'\\0'\)/.test(on) === false)
+			throw new Error("assert not restored");
 	});
 	var msg =
 		fail === 0
@@ -562,4 +580,6 @@ function runSelfTests() {
 }
 try {
 	runSelfTests();
-} catch (_) {}
+} catch (err) {
+	console.error("Self-tests failed", err);
+}
