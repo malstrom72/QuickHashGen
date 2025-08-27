@@ -13,7 +13,9 @@ if (DEBUG) {
 	AssertionError.prototype = Error.prototype;
 	assert = function(condition, message) {
 		if (!condition) {
-			if ("assert" in console) console.assert(condition, message);
+			if (typeof console !== 'undefined' && typeof console.assert === 'function') {
+				console.assert(condition, message);
+			}
 			throw new AssertionError(message);
 		}
 	};
@@ -226,7 +228,7 @@ function QuickHashGen(strings, minTableSize, maxTableSize, zeroTerminated, allow
         var prng = new XorshiftPRNG2x32(seed0, seed1);
         this.randomInt = function(max) {
                 return prng.nextInt(max);
-        };
+	};
         this.getSeed = function() { return seed0; };
 
 	var maxLength = 0;
@@ -249,7 +251,7 @@ function QuickHashGen(strings, minTableSize, maxTableSize, zeroTerminated, allow
                 for (var j = 0; j <= maxLength; ++j) {
                         var c = (j < n ? strings[i].charCodeAt(j) : 0);
                         a[j] = c;
-                }
+		}
 		stringChars[i] = a;
 	}
 
@@ -264,15 +266,15 @@ function QuickHashGen(strings, minTableSize, maxTableSize, zeroTerminated, allow
                 var fn;
                 try {
                         fn = eval('(function(n,w){return ' + expr + ';})');
-                } catch (e) {
-                        throw new Error('Eval compile error: ' + (e && e.message ? e.message : String(e)));
-                }
+		} catch (e) {
+			throw new Error('Eval compile error: ' + (e && e.message ? e.message : String(e)));
+		}
                 var minLen = Infinity;
                 for (var i = 0; i < strings.length; ++i) {
                         var L = strings[i].length;
-                        if (L < minLen) minLen = L;
-                }
-                if (!isFinite(minLen)) return { checked: 0 };
+			if (L < minLen) minLen = L;
+		}
+		if (!isFinite(minLen)) return { checked: 0 };
                 var padLen = zeroTerminated ? (minLen + 1) : minLen;
                 var mod = foundSolution.table.length;
                 for (var j = 0; j < strings.length; ++j) {
@@ -283,18 +285,18 @@ function QuickHashGen(strings, minTableSize, maxTableSize, zeroTerminated, allow
                                 var c = (k < n ? str.charCodeAt(k) : 0);
                                 if (c >= 128) c -= 256;
                                 arr[k] = c;
-                        }
+			}
                         var idx;
                         try {
                                 idx = fn(n, arr) & (mod - 1);
-                        } catch (e2) {
+			} catch (e2) {
                                 throw new Error('Eval runtime error on #' + j + ': ' + (e2 && e2.message ? e2.message : String(e2)));
-                        }
+			}
                         var idxFunc = foundSolution.hashes[j] & (mod - 1);
-                        if (idx !== idxFunc || foundSolution.table[idx] !== j) {
+			if (idx !== idxFunc || foundSolution.table[idx] !== j) {
                                 throw new Error('Eval mismatch on #' + j);
-                        }
-                }
+			}
+		}
                 return { checked: strings.length };
         }
 
@@ -443,7 +445,7 @@ function QuickHashGen(strings, minTableSize, maxTableSize, zeroTerminated, allow
 
         this.getTestedCount = function() {
                 return triedCounter;
-        };
+	};
 
         function buildExpression(foundSolution) {
                 var exprObj = generateRandomExpression(
@@ -458,17 +460,17 @@ function QuickHashGen(strings, minTableSize, maxTableSize, zeroTerminated, allow
         this.generateCExpression = function(foundSolution) {
                 var r = buildExpression(foundSolution);
                 return '(' + r.exprObj.c + ') & ' + r.mask + 'u';
-        };
+	};
 
         this.generateJSExpression = function(foundSolution) {
                 var r = buildExpression(foundSolution);
                 return '(' + r.exprObj.js + ') & ' + r.mask;
-        };
+	};
 
         this.generateJSEvaluator = function(foundSolution) {
                 var r = buildExpression(foundSolution);
                 return function(n, w) { return r.exprObj.fn(n, w) & r.mask; };
-        };
+	};
 
         this.generateCOutput = function(template, foundSolution) {
                 var cExpression = this.generateCExpression(foundSolution);
@@ -483,7 +485,7 @@ function QuickHashGen(strings, minTableSize, maxTableSize, zeroTerminated, allow
                         'hashExpression': function() { return cExpression; },
                         'stringDescription': function() { return (zeroTerminated ? "zero terminated" : "zero termination not required"); },
                         'seed': function() { return seed0; }
-                };
+		};
 
 		var output = '';
 		var input = template;
@@ -502,7 +504,7 @@ function QuickHashGen(strings, minTableSize, maxTableSize, zeroTerminated, allow
 		}
 
                 return output;
-        };
+	};
 
 }
 
