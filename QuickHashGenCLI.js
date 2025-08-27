@@ -5,29 +5,25 @@ const fs = require("fs");
 const core = require("./QuickHashGenCore");
 
 function printUsage() {
-	console.error("Usage: node QuickHashGenCLI.js [options] [input-file]");
-	console.error("Options:");
-	console.error("  -h, --help              show usage information");
 	console.error(
-		"  --tests N                number of expressions to try (default 100000)",
+		[
+			"Usage: node QuickHashGenCLI.js [options] [input-file]",
+			"Options:",
+			"  -h, --help              show usage information",
+			"  --tests N                number of expressions to try (default 100000)",
+			"  --no-multiplications     disallow multiplications",
+			"  --no-length              disallow use of n (string length)",
+			"  --no-zero-termination    allow non-zero-terminated strings",
+			"  --eval-test              verify result with eval engine",
+			"  --force-eval             use eval engine (if available)",
+			"  --bench                  benchmark solution generation speed",
+			"  --seed N                seed the random generator",
+			"",
+			"Strings are read from [input-file] or stdin. Each line may be",
+			"plain text or one or more C-style quoted strings separated by",
+			"commas or whitespace.",
+		].join("\n"),
 	);
-	console.error("  --no-multiplications     disallow multiplications");
-	console.error("  --no-length              disallow use of n (string length)");
-	console.error("  --no-zero-termination    allow non-zero-terminated strings");
-	console.error("  --eval-test              verify result with eval engine");
-	console.error("  --force-eval             use eval engine (if available)");
-	console.error(
-		"  --bench                  benchmark solution generation speed",
-	);
-	console.error("  --seed N                seed the random generator");
-	console.error("");
-	console.error(
-		"Strings are read from [input-file] or stdin. Each line may be",
-	);
-	console.error(
-		"plain text or one or more C-style quoted strings separated by",
-	);
-	console.error("commas or whitespace.");
 }
 
 let args = process.argv.slice(2);
