@@ -414,6 +414,7 @@ function QuickHashGen(strings, minTableSize, maxTableSize, zeroTerminated, allow
 				var found = false;
 				while (!found && tableSize <= maxTableSize) {
 					var j = 0;
+					var hash;
 					while (j < stringsCount && collisions[hash = (hashes[j] & (tableSize - 1))] !== counter) {
 						collisions[hash] = counter;
 						++j;
@@ -425,19 +426,19 @@ function QuickHashGen(strings, minTableSize, maxTableSize, zeroTerminated, allow
 						tableSize <<= 1;
 					}
 				}
-								
-                                if (found) {
-                                        var table = new Array(tableSize);
-                                        for (var j = 0; j < tableSize; ++j) table[j] = -1;
-                                        for (var j = 0; j < stringsCount; ++j) {
-                                                var hash = func(strings[j].length, stringChars[j]) & (tableSize - 1);
-                                                if (DEBUG) assert(table[hash] === -1, "table[hash] === -1");
-                                                table[hash] = j;
-                                        }
-                                        var result = { "complexity":complexity, "prng":prngCopy, "table":table, "hashes":hashes };
-                                        if (evalTest) result.evalInfo = verifyEval(result);
-                                        return result;
-                                }
+
+				if (found) {
+					var table = new Array(tableSize);
+					for (var j = 0; j < tableSize; ++j) table[j] = -1;
+					for (var j = 0; j < stringsCount; ++j) {
+						var hash = func(strings[j].length, stringChars[j]) & (tableSize - 1);
+						if (DEBUG) assert(table[hash] === -1, "table[hash] === -1");
+						table[hash] = j;
+					}
+					var result = { "complexity":complexity, "prng":prngCopy, "table":table, "hashes":hashes };
+					if (evalTest) result.evalInfo = verifyEval(result);
+					return result;
+				}
 			}
 		}
 		return null;
