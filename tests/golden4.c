@@ -8,12 +8,11 @@ static int lookup(int n /* string length */, const char* s /* string (zero termi
 		"abcxyzabcxyzabcxyzabcxyzabcxyzabcxyzabcxyzabcxyzabcxyzabcxyzabcxyzabcxyzabcxyzabcxyzabcxyzabcxyzabcxyzabcxyzabcxyzabcxyzabcxyzabcxyzabcxyzabcxyzabcxyzabcxyzabcxyzabcxyzabcxyzabcxyzabcxyzabcxyzabcxyzabcxyzabcxyzabcxyzabcxyzabcxyzabcxyzabcxyz", 
 		"01234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567"
 	};
-	static const int HASH_TABLE[32] = {
-		-1, -1, -1, -1, -1, -1, 1, 0, -1, 4, -1, 3, -1, -1, -1, -1, 
-		-1, -1, -1, -1, -1, -1, -1, -1, -1, 2, -1, -1, -1, -1, -1, -1
+	static const int HASH_TABLE[16] = {
+		1, 2, -1, -1, -1, -1, -1, 4, -1, 3, -1, -1, -1, -1, -1, 0
 	};
 	const unsigned char* p = (const unsigned char*) s;
 	if (n < 128 || n > 240) return -1;
-	int stringIndex = HASH_TABLE[(p[67] - 25u ^ p[127]) & 31u];
+	int stringIndex = HASH_TABLE[(((0u + 24u) >> 27 ^ p[127]) + p[51] + 31u) & 15u];
 	return (stringIndex >= 0 && strcmp(s, STRINGS[stringIndex]) == 0) ? stringIndex : -1;
 }

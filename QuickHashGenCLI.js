@@ -121,11 +121,8 @@ while (qh.getTestedCount() < opts.tests) {
 	if (
 		found &&
 		(best === null ||
-			found.complexity < best.complexity ||
-			(found.complexity === best.complexity &&
-				(found.cost < best.cost ||
-					(found.cost === best.cost &&
-						found.table.length < best.table.length))))
+			found.cost < best.cost ||
+			(found.cost === best.cost && found.table.length < best.table.length))
 	) {
 		best = found;
 		if (best.complexity === 1) break;
@@ -166,11 +163,9 @@ if (opts.bench) {
 			if (
 				found &&
 				(bestBench === null ||
-					found.complexity < bestBench.complexity ||
-					(found.complexity === bestBench.complexity &&
-						(found.cost < bestBench.cost ||
-							(found.cost === bestBench.cost &&
-								found.table.length < bestBench.table.length))))
+					found.cost < bestBench.cost ||
+					(found.cost === bestBench.cost &&
+						found.table.length < bestBench.table.length))
 			) {
 				bestBench = found;
 				if (bestBench.complexity === 1) break;
