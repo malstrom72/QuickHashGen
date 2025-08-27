@@ -21,8 +21,8 @@ Options:
 
 - `-h`, `--help`: display usage information.
 - `--tests N`: number of expressions to try (default `100000`). A larger value
-  increases the search space and the odds of discovering a lower-complexity hash
-  at the cost of longer runtime.
+  increases the search space and the odds of discovering a lower-cost hash at
+  the cost of longer runtime.
 - `--no-multiplications`: disallow multiplication instructions in the generated
   hash expression. Useful for targets where multiplies are expensive or
   unavailable.
@@ -185,10 +185,9 @@ evalTest=false, seed0?, seed1?)`.
 
 ### Cost model
 
-To break ties between expressions of the same complexity, QuickHashGen
-tracks a simple runtime cost for each abstract syntax tree (AST) node. The
-total cost combines these node costs with a penalty for the hash table size,
-and the search prefers solutions with the lowest cost.
+QuickHashGen tracks a simple runtime cost for each abstract syntax tree (AST)
+node. The total cost combines these node costs with a penalty for the hash
+table size, and the search prefers solutions with the lowest cost.
 
 Base node costs reflect their relative expense:
 
@@ -207,10 +206,9 @@ Binary operators add the cost of their operands plus an operator cost:
 Hash table size also adds to the total cost: each power-of-two increase adds
 `16`. For example, a table with `256` entries (`2^8`) contributes `128`.
 
-When multiple expressions hash all strings without collisions and have the
-same complexity, the generator chooses the one with the lowest total cost,
-favoring cheaper operations like constants over more expensive character
-lookups and large tables.
+When multiple expressions hash all strings without collisions, the generator
+chooses the one with the lowest total cost, favoring cheaper operations like
+constants over more expensive character lookups and large tables.
 
 ### Debug mode
 

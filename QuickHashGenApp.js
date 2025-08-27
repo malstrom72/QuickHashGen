@@ -454,11 +454,8 @@ function intervalFunction() {
 				if (found !== null) {
 					if (
 						best === null ||
-						found.complexity < best.complexity ||
-						(found.complexity === best.complexity &&
-							(found.cost < best.cost ||
-								(found.cost === best.cost &&
-									found.table.length < best.table.length)))
+						found.cost < best.cost ||
+						(found.cost === best.cost && found.table.length < best.table.length)
 					) {
 						best = found;
 						updateOutput();

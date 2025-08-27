@@ -666,7 +666,7 @@ function QuickHashGen(
 			);
 		}
 		if (!(complexity in tried)) {
-			tried[complexity] = {};
+			tried[complexity] = Object.create(null);
 		}
 
 		var stringsCount = strings.length;
@@ -684,8 +684,8 @@ function QuickHashGen(
 			);
 			var expr = exprObj.js;
 			var exprCost = exprObj.cost;
-			if (complexity >= 4 || !(expr in tried[complexity])) {
-				if (complexity < 4) {
+			if (complexity > 4 || !(expr in tried[complexity])) {
+				if (complexity <= 4) {
 					tried[complexity][expr] = true;
 				}
 				var func;
