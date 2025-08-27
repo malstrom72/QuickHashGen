@@ -44,7 +44,9 @@ function findSolution(zeroTerminated) {
 			(best === null ||
 				found.complexity < best.complexity ||
 				(found.complexity === best.complexity &&
-					found.table.length < best.table.length))
+					(found.cost < best.cost ||
+						(found.cost === best.cost &&
+							found.table.length < best.table.length))))
 		) {
 			best = found;
 			if (best.complexity === 1) break;
