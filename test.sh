@@ -1,6 +1,8 @@
 #!/bin/sh
 set -e
 
+node tests/parseQuickHashGenInput.test.js
+
 node QuickHashGenCLI.js --seed 1 --tests 100 tests/input1.txt > tests/out1.c
 # verify option handling
 node QuickHashGenCLI.js --seed 1 --tests 100 --force-eval --eval-test tests/input1.txt > tests/out1_eval.c
