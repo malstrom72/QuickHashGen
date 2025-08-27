@@ -75,6 +75,7 @@ function parseCString(s) {
 
 	while (i < s.length && s[i] !== endChar && s[i] !== '\r' && s[i] !== '\n') {
 		if (s[i] === '\\') {
+			if (i + 1 >= s.length) throw new Error("Unterminated C escape sequence");
 			o += s.substring(b, i);
 			var c = s[i + 1];
 			i += 2;
@@ -83,24 +84,24 @@ function parseCString(s) {
 			else {
 				b = i;
 				switch (c) {
-					case '\r': if (s[i] === '\n') ++i; break;
+					case '\r': if (i < s.length && s[i] === '\n') ++i; break;
 					case '\n': break;
 
 					case 'u':
-						while ("0123456789abcdefABCDEF".indexOf(s[i]) >= 0 && i < b + 4) ++i;
+						while (i < s.length && "0123456789abcdefABCDEF".indexOf(s[i]) >= 0 && i < b + 4) ++i;
 						if (i !== b + 4) throw new Error("Illegal C escape sequence");
 						o += String.fromCharCode(parseInt(s.substring(b, i), 16));
 						break;
 
 					case 'x':
-						while ("0123456789abcdefABCDEF".indexOf(s[i]) >= 0) ++i;
+						while (i < s.length && "0123456789abcdefABCDEF".indexOf(s[i]) >= 0) ++i;
 						if (i === b) throw new Error("Illegal C escape sequence");
 						o += String.fromCharCode(parseInt(s.substring(b, i), 16));
 						break;
-					
+
 					default:
 						b = --i;
-						while ("01234567".indexOf(s[i]) >= 0 && i < b + 3) ++i;
+						while (i < s.length && "01234567".indexOf(s[i]) >= 0 && i < b + 3) ++i;
 						if (i === b) throw new Error("Illegal C escape sequence");
 						o += String.fromCharCode(parseInt(s.substring(b, i), 8));
 						break;
