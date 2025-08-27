@@ -9,7 +9,7 @@ function printUsage() {
 		[
 			"Usage: node QuickHashGenCLI.js [options] [input-file]",
 			"Options:",
-			"  -h, --help              show usage information",
+			"  -h, --help               show usage information",
 			"  --tests N                number of expressions to try (default 100000)",
 			"  --no-multiplications     disallow multiplications",
 			"  --no-length              disallow use of n (string length)",
@@ -17,7 +17,7 @@ function printUsage() {
 			"  --eval-test              verify result with eval engine",
 			"  --force-eval             use eval engine (if available)",
 			"  --bench                  benchmark solution generation speed",
-			"  --seed N                seed the random generator",
+			"  --seed N                 seed the random generator",
 			"",
 			"Strings are read from [input-file] or stdin. Each line may be",
 			"plain text or one or more C-style quoted strings separated by",
@@ -108,25 +108,24 @@ let qh = new core.QuickHashGen(
 	seed,
 );
 let best = null;
-
 while (qh.getTestedCount() < opts.tests) {
-	let complexity =
-		complexityPRNG.nextInt(best === null ? 32 : best.complexity) + 1;
-	let remaining = opts.tests - qh.getTestedCount();
-	let iters = Math.max(
-		1,
-		Math.min(remaining, Math.floor(200 / strings.length)),
-	);
-	let found = qh.search(complexity, iters);
-	if (
-		found &&
-		(best === null ||
-			found.cost < best.cost ||
-			(found.cost === best.cost && found.table.length < best.table.length))
-	) {
-		best = found;
-		if (best.complexity === 1) break;
-	}
+    let complexity =
+        complexityPRNG.nextInt(best === null ? 32 : best.complexity) + 1;
+    let remaining = opts.tests - qh.getTestedCount();
+    let iters = Math.max(
+        1,
+        Math.min(remaining, Math.floor(200 / strings.length)),
+    );
+    let found = qh.search(complexity, iters);
+    if (
+        found &&
+        (best === null ||
+            found.cost < best.cost ||
+            (found.cost === best.cost && found.table.length < best.table.length))
+    ) {
+        best = found;
+        if (best.complexity === 1) break;
+    }
 }
 
 if (!best) {

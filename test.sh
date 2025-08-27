@@ -42,32 +42,37 @@ node QuickHashGenCLI.js --seed 17 --tests 500 tests/input7.txt > tests/out7.c
 node QuickHashGenCLI.js --seed 19 --tests 2000 tests/input8.txt > tests/out8.c
 node QuickHashGenCLI.js --seed 23 --tests 100000 tests/input9.txt > tests/out9.c
 
-diff -u tests/out1.c tests/out1_eval.c
-diff -u tests/golden1.c tests/out1.c
+diff -u tests/out1.c tests/out1_eval.c || { echo "Diff found: tests/out1.c vs tests/out1_eval.c" >&2; exit 1; }
+diff -u tests/golden1.c tests/out1.c || { echo "Diff found: tests/golden1.c vs tests/out1.c" >&2; exit 1; }
 rm tests/out1.c tests/out1_eval.c
 
-diff -u tests/golden2.c tests/out2.c
+diff -u tests/golden2.c tests/out2.c || { echo "Diff found: tests/golden2.c vs tests/out2.c" >&2; exit 1; }
 rm tests/out2.c
 
-diff -u tests/golden3.c tests/out3.c
+diff -u tests/golden3.c tests/out3.c || { echo "Diff found: tests/golden3.c vs tests/out3.c" >&2; exit 1; }
 rm tests/out3.c
 
-diff -u tests/golden4.c tests/out4.c
+diff -u tests/golden4.c tests/out4.c || { echo "Diff found: tests/golden4.c vs tests/out4.c" >&2; exit 1; }
 rm tests/out4.c
 
-diff -u tests/golden5.c tests/out5.c
+diff -u tests/golden5.c tests/out5.c || { echo "Diff found: tests/golden5.c vs tests/out5.c" >&2; exit 1; }
 rm tests/out5.c
 
-diff -u tests/golden6.c tests/out6.c
+diff -u tests/golden6.c tests/out6.c || { echo "Diff found: tests/golden6.c vs tests/out6.c" >&2; exit 1; }
 rm tests/out6.c
 
-diff -u tests/golden7.c tests/out7.c
+diff -u tests/golden7.c tests/out7.c || { echo "Diff found: tests/golden7.c vs tests/out7.c" >&2; exit 1; }
 rm tests/out7.c
 
-diff -u tests/golden8.c tests/out8.c
+diff -u tests/golden8.c tests/out8.c || { echo "Diff found: tests/golden8.c vs tests/out8.c" >&2; exit 1; }
 rm tests/out8.c
 
-diff -u tests/golden9.c tests/out9.c
+diff -u tests/golden9.c tests/out9.c || { echo "Diff found: tests/golden9.c vs tests/out9.c" >&2; exit 1; }
 rm tests/out9.c
+
+# Exercise the README example (default 100000 tests) to ensure it completes
+printf "black\nsilver\ngray\nwhite\nmaroon\nred\npurple\nfuchsia\ngreen\nlime\nolive\nyellow\nnavy\nblue\nteal\naqua\n" | node QuickHashGenCLI.js > colors.c
+test -s colors.c
+rm colors.c
 
 echo "All tests passed."

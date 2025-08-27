@@ -684,6 +684,13 @@ function QuickHashGen(
 			);
 			var expr = exprObj.js;
 			var exprCost = exprObj.cost;
+
+			// Count every attempted expression towards the global test budget,
+			// even if we skip it due to being a duplicate at low complexity.
+			// This keeps progress monotonic and avoids stalls when many
+			// low-complexity duplicates are generated.
+			++triedCounter;
+			
 			if (complexity > 4 || !(expr in tried[complexity])) {
 				if (complexity <= 4) {
 					tried[complexity][expr] = true;
@@ -698,8 +705,6 @@ function QuickHashGen(
 				} else {
 					func = exprObj.fn;
 				}
-
-				++triedCounter;
 
 				for (var j = 0; j < stringsCount; ++j) {
 					hashes[j] = func(strings[j].length, stringChars[j]);
