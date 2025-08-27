@@ -77,7 +77,7 @@ let maxSize = minSize * 8;
 
 let seed = typeof opts.seed === 'number' ? opts.seed : (Math.random() * 0x100000000) >>> 0;
 let complexityPRNG = new core.XorshiftPRNG2x32(seed);
-let qh = new core.QuickHashGen(strings, minSize, maxSize, opts.requireZeroTermination, opts.allowMultiplications, opts.allowLength, opts.forceEval, opts.evalTest, 123456789, 362436069);
+let qh = new core.QuickHashGen(strings, minSize, maxSize, opts.requireZeroTermination, opts.allowMultiplications, opts.allowLength, opts.forceEval, opts.evalTest, seed);
 let best = null;
 
 while (qh.getTestedCount() < opts.tests) {
@@ -100,9 +100,8 @@ if (!best) {
 
 if (opts.bench) {
     function benchGeneration(useEval) {
-        const seed = 123456789;
         let complexityRng = new core.XorshiftPRNG2x32(seed);
-        let qhBench = new core.QuickHashGen(strings, minSize, maxSize, opts.requireZeroTermination, opts.allowMultiplications, opts.allowLength, useEval, false, 123456789, 362436069);
+        let qhBench = new core.QuickHashGen(strings, minSize, maxSize, opts.requireZeroTermination, opts.allowMultiplications, opts.allowLength, useEval, false, seed);
         let bestBench = null;
         const start = process.hrtime.bigint();
         while (qhBench.getTestedCount() < opts.tests) {
