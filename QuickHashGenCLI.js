@@ -7,6 +7,7 @@ const core = require('./QuickHashGenCore');
 function printUsage() {
     console.error('Usage: node QuickHashGenCLI.js [options] [input-file]');
     console.error('Options:');
+    console.error('  -h, --help              show usage information');
     console.error('  --tests N                number of expressions to try (default 100000)');
     console.error('  --no-multiplications     disallow multiplications');
     console.error('  --no-length              disallow use of n (string length)');
@@ -34,7 +35,10 @@ let opts = {
 let inputFile = null;
 for (let i = 0; i < args.length; ++i) {
     const a = args[i];
-    if (a === '--tests' && i + 1 < args.length) {
+    if (a === '--help' || a === '-h') {
+        printUsage();
+        process.exit(0);
+    } else if (a === '--tests' && i + 1 < args.length) {
         opts.tests = parseInt(args[++i], 10);
         if (!Number.isFinite(opts.tests) || opts.tests < 0) {
             printUsage();
