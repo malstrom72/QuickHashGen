@@ -511,7 +511,7 @@ function parseQuickHashGenInput(text) {
 	var strings = [ ];
 	for (var i = 0; i < lines.length; ++i) {
 		var s = lines[i].trim();
-		if (s[0] === '\"' || s[0] === '\'') {
+		if (s.length && (s[0] === '\"' || s[0] === '\'')) {
 			var o = 0;
 			while (o < s.length) {
 				var parsed = parseCString(s.substr(o));
@@ -524,8 +524,8 @@ function parseQuickHashGenInput(text) {
 					throw new Error("Invalid input");
 				}
 			}
-		} else {
-			if (s !== "") strings.push(s);
+		} else if (s.length) {
+			strings.push(s);
 		}
 	}
 	return strings;

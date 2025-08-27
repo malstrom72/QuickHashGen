@@ -1,6 +1,8 @@
 #!/bin/sh
 set -e
 
+node tests/parseQuickHashGenInput.test.js
+
 node QuickHashGenCLI.js --seed 1 --tests 100 tests/input1.txt > tests/out1.c
 # invalid option values should print usage and fail
 if node QuickHashGenCLI.js --tests -1 tests/input1.txt >/dev/null 2>tests/err.log; then
