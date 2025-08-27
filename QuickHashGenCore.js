@@ -216,7 +216,7 @@ if (!("imul" in Math)) {
 }
 
 function QuickHashGen(strings, minTableSize, maxTableSize, zeroTerminated, allowMultiplication, allowLength, useEvalEngine, evalTest, seed0, seed1) {
-        var stringSet = { };
+        var stringSet = Object.create(null);
 
         // Each QuickHashGen instance maintains its own PRNG to avoid global state.
         if (typeof seed0 === "undefined") {
@@ -235,10 +235,10 @@ function QuickHashGen(strings, minTableSize, maxTableSize, zeroTerminated, allow
 	var minLength = 10000000;
 	for (var i = 0; i < strings.length; ++i) {
 		var s = strings[i];
-		if (s in stringSet) {
+		if (Object.prototype.hasOwnProperty.call(stringSet, s)) {
 			throw new Error("String " + escapeCString(s) + " appears more than once");
 		}
-		stringSet[s] = s;
+		stringSet[s] = 1;
 		var n = s.length;
 		minLength = Math.min(n, minLength);
 		maxLength = Math.max(n, maxLength);
@@ -248,9 +248,9 @@ function QuickHashGen(strings, minTableSize, maxTableSize, zeroTerminated, allow
 	for (var i = 0; i < strings.length; ++i) {
 		var n = strings[i].length;
 		var a = new Array(maxLength + 1);
-                for (var j = 0; j <= maxLength; ++j) {
-                        var c = (j < n ? strings[i].charCodeAt(j) : 0);
-                        a[j] = c;
+		for (var j = 0; j <= maxLength; ++j) {
+			var c = (j < n ? strings[i].charCodeAt(j) : 0);
+			a[j] = c;
 		}
 		stringChars[i] = a;
 	}
