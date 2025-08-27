@@ -19,38 +19,38 @@ node QuickHashGenCLI.js [options] [input-file]
 
 Options:
 
-* `-h`, `--help` &ndash; display usage information.
-* `--tests N` &ndash; number of expressions to try (default `100000`). A larger value
+- `-h`, `--help` &ndash; display usage information.
+- `--tests N` &ndash; number of expressions to try (default `100000`). A larger value
   increases the search space and the odds of discovering a lower-complexity hash
   at the cost of longer runtime.
-* `--no-multiplications` &ndash; disallow multiplication instructions in the generated
+- `--no-multiplications` &ndash; disallow multiplication instructions in the generated
   hash expression. Useful for targets where multiplies are expensive or
   unavailable.
-* `--no-length` &ndash; prevent use of the string length variable `n` in the hash
+- `--no-length` &ndash; prevent use of the string length variable `n` in the hash
   expression. This keeps the hash based strictly on character data so strings of
   differing lengths don't simply hash to their length. The generated lookup still
   receives `n` for bounds checking.
-* `--no-zero-termination` &ndash; generate a lookup function that does not require the
+- `--no-zero-termination` &ndash; generate a lookup function that does not require the
   input strings to be zero-terminated. The resulting C template uses `strncmp`
   and expects the caller to supply the string length.
-* `--eval-test` &ndash; after a candidate expression is found, evaluate it on all input
+- `--eval-test` &ndash; after a candidate expression is found, evaluate it on all input
   strings using the selected engine to verify that it maps each string to the
   expected index. Adds runtime but provides a safety check when modifying the
   algorithm.
-* `--force-eval` &ndash; use the `eval` engine instead of the default `Function`
+- `--force-eval` &ndash; use the `eval` engine instead of the default `Function`
   constructor when searching and testing. Mirrors the HTML interface’s "Use eval
   engine" checkbox and can influence performance depending on the environment.
-* `--bench` &ndash; run a simple benchmark comparing the `Function` constructor and
+- `--bench` &ndash; run a simple benchmark comparing the `Function` constructor and
   `eval` engines after a solution is found.
- * `--seed N` &ndash; seed all internal randomness with a single 32-bit value for
-   fully deterministic output.
+- `--seed N` &ndash; seed all internal randomness with a single 32-bit value for
+  fully deterministic output.
 
 ### Input formats
 
 Strings are read from a file or standard input. Each line may be:
 
-* plain text, representing a single string per line, or
-* one or more C-style quoted strings separated by whitespace or commas.
+- plain text, representing a single string per line, or
+- one or more C-style quoted strings separated by whitespace or commas.
 
 Quoted strings support standard C escape sequences such as `\n` or `\xFF`,
 allowing spaces and binary data.
@@ -128,19 +128,23 @@ Color classify(const std::string& color) {
 The `QuickHashGenCore.js` module exposes the algorithm for use within Node or the browser:
 
 ```javascript
-const qh = require('./QuickHashGenCore');
-const strings = ['red', 'green', 'blue'];
+const qh = require("./QuickHashGenCore");
+const strings = ["red", "green", "blue"];
 
 let minSize = 1;
 while (strings.length > minSize) minSize <<= 1;
 const maxSize = minSize * 8;
 
-const gen = new qh.QuickHashGen(strings, minSize, maxSize,
-                                 true  /* zero-terminated */,
-                                 true  /* allow multiplications */,
-                                 true  /* allow length */,
-                                 false /* use eval engine */,
-                                 false /* eval self-test */);
+const gen = new qh.QuickHashGen(
+	strings,
+	minSize,
+	maxSize,
+	true /* zero-terminated */,
+	true /* allow multiplications */,
+	true /* allow length */,
+	false /* use eval engine */,
+	false /* eval self-test */,
+);
 const best = gen.search(10, 1000);
 const cExpr = gen.generateCExpression(best);
 console.log(cExpr);
@@ -151,32 +155,32 @@ console.log(cExpr);
 `QuickHashGenCore.js` exports a handful of helpers and the `QuickHashGen`
 class for programmatic integration:
 
-* **`QuickHashGen`** – the core search engine. The constructor accepts
+- **`QuickHashGen`** – the core search engine. The constructor accepts
   `(strings, minTableSize, maxTableSize, zeroTerminated,
-  allowMultiplication, allowLength, useEvalEngine=false,
-  evalTest=false, seed0?, seed1?)`.
+allowMultiplication, allowLength, useEvalEngine=false,
+evalTest=false, seed0?, seed1?)`.
   If `seed0` is omitted the PRNG is seeded randomly; providing `seed0`
   (and optionally `seed1`) yields deterministic output.
-    Methods include:
-    * `search(complexity, iterations)` – explore random expressions and return
-      the first collision-free solution or `null`.
-    * `getTestedCount()` – total number of expressions evaluated so far.
-    * `randomInt(max)` – draw a pseudo-random integer in `[0, max)`.
-    * `generateCExpression(solution)` – build a C hash expression string.
-    * `generateJSExpression(solution)` – build a JavaScript hash expression string.
-    * `generateJSEvaluator(solution)` – build a CSP‑safe evaluator function.
-    * `generateCOutput(template, solution)` – populate a C template using a
-      solution object returned by `search` (internally uses `generateCExpression`).
-* **`parseQuickHashGenInput(text)`** – parse newline or C‑style quoted
+  Methods include:
+  - `search(complexity, iterations)` – explore random expressions and return
+    the first collision-free solution or `null`.
+  - `getTestedCount()` – total number of expressions evaluated so far.
+  - `randomInt(max)` – draw a pseudo-random integer in `[0, max)`.
+  - `generateCExpression(solution)` – build a C hash expression string.
+  - `generateJSExpression(solution)` – build a JavaScript hash expression string.
+  - `generateJSEvaluator(solution)` – build a CSP‑safe evaluator function.
+  - `generateCOutput(template, solution)` – populate a C template using a
+    solution object returned by `search` (internally uses `generateCExpression`).
+- **`parseQuickHashGenInput(text)`** – parse newline or C‑style quoted
   strings into an array, mirroring CLI input handling.
-* **`stringListToC(strings, columns, prefix)`** and
+- **`stringListToC(strings, columns, prefix)`** and
   **`numberListToC(numbers, columns, base, prefix)`** – format arrays as C
   initializers.
-* **`toHex(i, length)`** – format a number as a zero-padded hexadecimal
+- **`toHex(i, length)`** – format a number as a zero-padded hexadecimal
   string.
-* **`parseCString`** / **`escapeCString`** – convert between C‑style quoted
+- **`parseCString`** / **`escapeCString`** – convert between C‑style quoted
   strings and raw JavaScript strings.
-* **`XorshiftPRNG2x32`** – deterministic pseudo‑random number generator used
+- **`XorshiftPRNG2x32`** – deterministic pseudo‑random number generator used
   during the search.
 
 ### Debug mode
