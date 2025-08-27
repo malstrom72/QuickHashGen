@@ -1,7 +1,8 @@
 "use strict";
 // Core hashing algorithm extracted for reuse in browser and CLI tools.
 
-var DEBUG = true;
+// Enable debug assertions by setting NODE_ENV=development.
+var DEBUG = typeof process !== 'undefined' && process && process.env && process.env.NODE_ENV === 'development';
 
 var assert;
 if (DEBUG) {
@@ -154,14 +155,13 @@ function escapeCString(s) {
 	return o;
 }
 
-// Q & D test
-
 if (DEBUG) {
-	var p = parseCString('"ab\\0cdef\\\\gjio\\n\\\r\nx\\x45\\u0045\\u0123\\?\\053\\1012end"slack');
-	assert(p[0] === "ab\0cdef\\gjio\nxEE\u0123?+A2end" && p[1] === 52);
-	assert(escapeCString("hej \n \x22''\\ \x04 \u2414 \0 \r du") === "\"hej \\n \\\"''\\\\ \\x04 \\u2414 \\0 \\r du\"");
-	assert(escapeCString("\x050018efgef") === '"\\x05\\x30\\x30\\x31\\x38\\x65\\x66gef"'); // \x in C++ is greedy (stupid)
-	assert(escapeCString("\u050018efgef") === '"\\u050018efgef"'); // \u isn't greedy
+        // Quick-and-dirty tests
+        var p = parseCString('"ab\\0cdef\\\\gjio\\n\\\r\nx\\x45\\u0045\\u0123\\?\\053\\1012end"slack');
+        assert(p[0] === "ab\0cdef\\gjio\nxEE\u0123?+A2end" && p[1] === 52);
+        assert(escapeCString("hej \n \x22''\\ \x04 \u2414 \0 \r du") === "\"hej \\n \\\"''\\\\ \\x04 \\u2414 \\0 \\r du\"");
+        assert(escapeCString("\x050018efgef") === '"\\x05\\x30\\x30\\x31\\x38\\x65\\x66gef"'); // \x in C++ is greedy (stupid)
+        assert(escapeCString("\u050018efgef") === '"\\u050018efgef"'); // \u isn't greedy
 }
 
 function stringListToC(strings, maxCols, pre) {

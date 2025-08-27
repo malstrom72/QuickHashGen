@@ -178,6 +178,20 @@ class for programmatic integration:
 * **`XorshiftPRNG2x32`** – deterministic pseudo‑random number generator used
   during the search.
 
+### Debug mode
+
+The core library includes a lightweight assertion helper and a few
+quick self-tests that run only when debug mode is enabled. To enable
+debugging during development, set the `NODE_ENV` environment variable
+to `development` before executing any scripts. For example:
+
+```
+NODE_ENV=development node QuickHashGenCLI.js --help
+```
+
+With `NODE_ENV` unset or set to `production`, these assertions and tests
+are skipped.
+
 ## Browser interface
 
 `QuickHashGen.html` offers an interactive front end. The single text area
