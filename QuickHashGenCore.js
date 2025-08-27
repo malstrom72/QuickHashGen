@@ -734,9 +734,11 @@ function QuickHashGen(
 						if (DEBUG) assert(table[hash] === -1, "table[hash] === -1");
 						table[hash] = j;
 					}
+					var tableCost = 0;
+					for (var t = tableSize; t > 1; t >>= 1) tableCost += 16;
 					var result = {
 						complexity: complexity,
-						cost: exprCost,
+						cost: exprCost + tableCost,
 						prng: prngCopy,
 						table: table,
 						hashes: hashes,

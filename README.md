@@ -187,8 +187,8 @@ evalTest=false, seed0?, seed1?)`.
 
 To break ties between expressions of the same complexity, QuickHashGen
 tracks a simple runtime cost for each abstract syntax tree (AST) node. The
-total cost of an expression is the sum of its node costs, and the search
-prefers solutions with the lowest cost.
+total cost combines these node costs with a penalty for the hash table size,
+and the search prefers solutions with the lowest cost.
 
 Base node costs reflect their relative expense:
 
@@ -204,10 +204,13 @@ Binary operators add the cost of their operands plus an operator cost:
 - XOR: `+1`
 - multiplication: `+4`
 
+Hash table size also adds to the total cost: each power-of-two increase adds
+`16`. For example, a table with `256` entries (`2^8`) contributes `128`.
+
 When multiple expressions hash all strings without collisions and have the
 same complexity, the generator chooses the one with the lowest total cost,
 favoring cheaper operations like constants over more expensive character
-lookups.
+lookups and large tables.
 
 ### Debug mode
 
