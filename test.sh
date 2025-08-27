@@ -2,6 +2,7 @@
 set -e
 
 node tests/parseQuickHashGenInput.test.js
+node tests/parseCString.test.js
 
 node QuickHashGenCLI.js --seed 1 --tests 100 tests/input1.txt > tests/out1.c
 # help flag should print usage and succeed
