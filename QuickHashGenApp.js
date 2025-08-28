@@ -1,5 +1,7 @@
 "use strict";
 // ===== Output template (shared via core) =====
+// DEBUG gate for eval-related UI controls. Default off for production.
+var DEBUG = false;
 function buildTemplate(zeroTerminated) {
 	return makeCTemplate({
 		zeroTerminated: !!zeroTerminated,
@@ -28,6 +30,28 @@ var HTML_ELEMENTS = [
 ];
 var elements = {};
 for (var i = 0; i < HTML_ELEMENTS.length; ++i) elements[HTML_ELEMENTS[i]] = document.getElementById(HTML_ELEMENTS[i]);
+// Hide eval-related controls in non-debug mode
+try {
+	if (!DEBUG) {
+		if (elements.evalTest) {
+			if (elements.evalTest.parentElement) elements.evalTest.parentElement.style.display = "none";
+			elements.evalTest.checked = false;
+			elements.evalTest.disabled = true;
+		}
+		if (elements.forceEval) {
+			if (elements.forceEval.parentElement) elements.forceEval.parentElement.style.display = "none";
+			elements.forceEval.checked = false;
+			elements.forceEval.disabled = true;
+		}
+		if (elements.testStatus) {
+			// Hide the self-tests/mode status line entirely when not debugging
+			elements.testStatus.style.display = "none";
+			elements.testStatus.textContent = "";
+		}
+	}
+} catch (err) {
+	console.error("Failed to apply DEBUG gating to controls", err);
+}
 // Stop on edits/toggles
 var isRunning = false;
 if (elements.editor)
@@ -71,7 +95,7 @@ if (elements.requireZeroTermination)
 	});
 if (elements.forceEval)
 	elements.forceEval.addEventListener("change", function () {
-		ENGINE_USE_EVAL = !!(EVAL_ALLOWED && elements.forceEval.checked);
+		ENGINE_USE_EVAL = !!(DEBUG && EVAL_ALLOWED && elements.forceEval.checked);
 		if (isRunning) {
 			isRunning = false;
 			elements.startStop.textContent = "Start";
@@ -165,6 +189,7 @@ function stopAndReport(header, details) {
 	}
 }
 function updateModeLabel() {
+	if (!DEBUG) return;
 	try {
 		var base = elements.testStatus.textContent || "";
 		var core = base.split(" | ")[0];
@@ -198,13 +223,13 @@ function resetSearch() {
 	EVAL_ALLOWED = detectEvalAllowed();
 	if (elements.forceEval) {
 		if (EVAL_ALLOWED) {
-			elements.forceEval.disabled = false;
+			elements.forceEval.disabled = !DEBUG ? true : false;
 		} else {
 			elements.forceEval.checked = false;
 			elements.forceEval.disabled = true;
 		}
 	}
-	ENGINE_USE_EVAL = !!(EVAL_ALLOWED && elements.forceEval && elements.forceEval.checked);
+	ENGINE_USE_EVAL = !!(DEBUG && EVAL_ALLOWED && elements.forceEval && elements.forceEval.checked);
 	updateModeLabel();
 	try {
 		strings = parseStringsFromEditor(lastInputText);
@@ -225,8 +250,8 @@ function resetSearch() {
 			elements.requireZeroTermination.checked,
 			elements.allowMultiplications.checked,
 			elements.allowLength.checked,
-			ENGINE_USE_EVAL,
-			elements.evalTest && elements.evalTest.checked,
+			DEBUG ? ENGINE_USE_EVAL : false,
+			DEBUG && elements.evalTest ? elements.evalTest.checked : false,
 			currentSeed,
 		);
 		elements.hashes.textContent = "";
@@ -286,10 +311,15 @@ function updateOutput() {
 		} catch (err) {
 			console.error("Failed to apply best solution", err);
 		}
-		var s = "";
-		for (var i = 0; i < strings.length; ++i)
-			s += escapeCString(strings[i]) + " : " + (best.hashes[i] & (best.table.length - 1)) + " (" + best.hashes[i] + ")\n";
-		elements.hashes.textContent = s;
+		var tableSize = best.table.length;
+		var header = "Legend: idx = hash & (tableSize-1) | tableSize=" + tableSize + "\n" + "<string> -> idx=<index> (hash=<raw>)\n";
+		var lines = [header];
+		for (var i = 0; i < strings.length; ++i) {
+			var raw = best.hashes[i];
+			var idx = raw & (tableSize - 1);
+			lines.push(escapeCString(strings[i]) + " -> idx=" + idx + " (hash=" + raw + ")");
+		}
+		elements.hashes.textContent = lines.join("\n");
 	} else elements.hashes.textContent = "";
 	updateModeLabel();
 }
@@ -375,6 +405,7 @@ function rewriteZeroTerminationMode(code, zeroTerminated) {
 }
 // ===== Self tests =====
 function runSelfTests() {
+	if (!DEBUG) return;
 	var ok = 0,
 		fail = 0,
 		failures = [];

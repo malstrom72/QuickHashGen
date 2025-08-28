@@ -33,13 +33,13 @@ Options:
 - `--no-zero-termination`: generate a lookup function that does not require the
   input strings to be zero-terminated. The resulting C template uses `strncmp`
   and expects the caller to supply the string length.
-- `--eval-test`: after a candidate expression is found, evaluate it on all input
-  strings using the selected engine to verify that it maps each string to the
-  expected index. Adds runtime but provides a safety check when modifying the
-  algorithm.
-- `--force-eval`: use the `eval` engine instead of the default `Function`
-  constructor when searching and testing. Mirrors the HTML interface’s "Use eval
-  engine" checkbox and can influence performance depending on the environment.
+  - `--eval-test`: after a candidate expression is found, evaluate it on all input
+    strings using the selected engine to verify that it maps each string to the
+    expected index (primarily for testing).
+  - `--force-eval`: use the `eval` engine instead of the default `Function`
+    constructor when searching and testing (primarily for testing). Mirrors the HTML
+    interface’s "Use eval engine" checkbox and can influence performance depending on
+    the environment.
 - `--bench`: run a simple benchmark comparing the `Function` constructor and
   `eval` engines after a solution is found.
 - `--seed N`: seed all internal randomness with a single 32-bit value for
@@ -259,9 +259,8 @@ the hash when you press **Start**. Editing the text or toggling any option
 automatically pauses the search so you can resume with new parameters.
 
 Checkboxes mirror the CLI flags, letting you disallow multiplications,
-omit the length variable, toggle zero-termination handling, run an
-evaluation check, or switch to the `eval` engine when the environment
-permits it.
+omit the length variable, toggle zero-termination handling, and (when in debug mode)
+optionally run an evaluation check or switch to the `eval` engine.
 
 ## License
 
