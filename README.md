@@ -97,28 +97,30 @@ A C++ program can then switch on the returned index:
 ```cpp
 #include <string>
 #include <stdexcept>
+
 extern int lookup(int n, const char* s);
-enum Color {BLACK, SILVER, GRAY, WHITE, MAROON, RED, PURPLE, FUCHSIA, GREEN, LIME, OLIVE, YELLOW, NAVY, BLUE, TEAL, AQUA};
+
+enum Color { BLACK, SILVER, GRAY, WHITE, MAROON, RED, PURPLE, FUCHSIA, GREEN, LIME, OLIVE, YELLOW, NAVY, BLUE, TEAL, AQUA };
 
 Color classify(const std::string& color) {
     switch (lookup(color.size(), color.c_str())) {
-    case BLACK:   return BLACK;
-    case SILVER:  return SILVER;
-    case GRAY:    return GRAY;
-    case WHITE:   return WHITE;
-    case MAROON:  return MAROON;
-    case RED:     return RED;
-    case PURPLE:  return PURPLE;
-    case FUCHSIA: return FUCHSIA;
-    case GREEN:   return GREEN;
-    case LIME:    return LIME;
-    case OLIVE:   return OLIVE;
-    case YELLOW:  return YELLOW;
-    case NAVY:    return NAVY;
-    case BLUE:    return BLUE;
-    case TEAL:    return TEAL;
-    case AQUA:    return AQUA;
-    default: throw std::invalid_argument("unknown color");
+    	case BLACK:   return BLACK;
+	    case SILVER:  return SILVER;
+	    case GRAY:    return GRAY;
+	    case WHITE:   return WHITE;
+	    case MAROON:  return MAROON;
+	    case RED:     return RED;
+	    case PURPLE:  return PURPLE;
+	    case FUCHSIA: return FUCHSIA;
+	    case GREEN:   return GREEN;
+	    case LIME:    return LIME;
+	    case OLIVE:   return OLIVE;
+	    case YELLOW:  return YELLOW;
+	    case NAVY:    return NAVY;
+	    case BLUE:    return BLUE;
+	    case TEAL:    return TEAL;
+	    case AQUA:    return AQUA;
+    	default: 	  throw std::invalid_argument("unknown color");
     }
 }
 ```
