@@ -2,7 +2,7 @@
 
 ## Context
 
-QuickHashGenCore.js already encapsulates the search engine and code emission primitives. Both frontends — the Node CLI (`QuickHashGenCLI.js`) and the browser app (`QuickHashGenApp.js`) — duplicate several concerns around templates, scheduling, and code-patching. Unifying these reduces maintenance and keeps behavior identical across environments.
+QuickHashGenCore.js already encapsulates the search engine and code emission primitives. Both frontends — the Node CLI (`QuickHashGenCLI.node.js`) and the browser app (`QuickHashGenApp.js`) — duplicate several concerns around templates, scheduling, and code-patching. Unifying these reduces maintenance and keeps behavior identical across environments.
 
 ## Goals
 

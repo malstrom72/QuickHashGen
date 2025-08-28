@@ -43,9 +43,7 @@ var TEMPLATE =
 	"   return 0;\n" +
 	"}\n";
 
-var seed = process.argv[2]
-	? parseInt(process.argv[2], 10)
-	: (Math.random() * 1000000 + 1) | 0;
+var seed = process.argv[2] ? parseInt(process.argv[2], 10) : (Math.random() * 1000000 + 1) | 0;
 process.stdout.write("// seed: " + seed + "\n");
 // Dedicated PRNG for generating the random string set.
 var rnd = new XorshiftPRNG2x32(seed);
@@ -75,18 +73,7 @@ var maxSize = minSize * MAX_SIZE_MULTIPLIER;
 // resulting in nondeterministic failures when running testLoopNode.sh.
 var hashSeed0 = rnd.nextInt32();
 var hashSeed1 = rnd.nextInt32();
-var theHashMaker = new QuickHashGen(
-	strings,
-	minSize,
-	maxSize,
-	true,
-	true,
-	true,
-	false,
-	false,
-	hashSeed0,
-	hashSeed1,
-);
+var theHashMaker = new QuickHashGen(strings, minSize, maxSize, true, true, true, false, false, hashSeed0, hashSeed1);
 
 var found = null;
 while (found === null) {
@@ -101,9 +88,7 @@ if (found !== null) {
 	try {
 		evalFn = eval("(function(n,w){ return " + jsExpr + "; })");
 	} catch (e) {
-		console.error(
-			"Eval compile error: " + (e && e.message ? e.message : String(e)),
-		);
+		console.error("Eval compile error: " + (e && e.message ? e.message : String(e)));
 		process.exit(1);
 	}
 	var jsFn = theHashMaker.generateJSEvaluator(found);

@@ -7,7 +7,7 @@ const core = require("./QuickHashGenCore");
 function printUsage() {
 	console.error(
 		[
-			"Usage: node QuickHashGenCLI.js [options] [input-file]",
+			"Usage: node QuickHashGenCLI.node.js [options] [input-file]",
 			"Options:",
 			"  -h, --help               show usage information",
 			"  --tests N                number of expressions to try (default 100000)",
@@ -91,10 +91,7 @@ const bounds = core.computeTableBounds(strings);
 let minSize = bounds.minSize;
 let maxSize = bounds.maxSize;
 
-let seed =
-	typeof opts.seed === "number"
-		? opts.seed
-		: (Math.random() * 0x100000000) >>> 0;
+let seed = typeof opts.seed === "number" ? opts.seed : (Math.random() * 0x100000000) >>> 0;
 let complexityPRNG = new core.XorshiftPRNG2x32(seed);
 let qh = new core.QuickHashGen(
 	strings,
@@ -110,18 +107,10 @@ let qh = new core.QuickHashGen(
 let best = null;
 while (qh.getTestedCount() < opts.tests) {
 	const remaining = opts.tests - qh.getTestedCount();
-	const found = core.scheduleStep(
-		qh,
-		best,
-		complexityPRNG,
-		strings.length,
-		remaining,
-	);
+	const found = core.scheduleStep(qh, best, complexityPRNG, strings.length, remaining);
 	if (
 		found &&
-		(best === null ||
-			found.cost < best.cost ||
-			(found.cost === best.cost && found.table.length < best.table.length))
+		(best === null || found.cost < best.cost || (found.cost === best.cost && found.table.length < best.table.length))
 	) {
 		best = found;
 		if (best.complexity === 1) break;
@@ -150,21 +139,15 @@ if (opts.bench) {
 		let bestBench = null;
 		const start = process.hrtime.bigint();
 		while (qhBench.getTestedCount() < opts.tests) {
-			let complexity =
-				complexityRng.nextInt(bestBench === null ? 32 : bestBench.complexity) +
-				1;
+			let complexity = complexityRng.nextInt(bestBench === null ? 32 : bestBench.complexity) + 1;
 			let remaining = opts.tests - qhBench.getTestedCount();
-			let iters = Math.max(
-				1,
-				Math.min(remaining, Math.floor(200 / strings.length)),
-			);
+			let iters = Math.max(1, Math.min(remaining, Math.floor(200 / strings.length)));
 			let found = qhBench.search(complexity, iters);
 			if (
 				found &&
 				(bestBench === null ||
 					found.cost < bestBench.cost ||
-					(found.cost === bestBench.cost &&
-						found.table.length < bestBench.table.length))
+					(found.cost === bestBench.cost && found.table.length < bestBench.table.length))
 			) {
 				bestBench = found;
 				if (bestBench.complexity === 1) break;
@@ -176,13 +159,7 @@ if (opts.bench) {
 	let tFunc = benchGeneration(false);
 	let tEval = benchGeneration(true);
 	console.error(
-		"Generation benchmark (" +
-			opts.tests +
-			" tests): func=" +
-			tFunc.toFixed(2) +
-			"ms eval=" +
-			tEval.toFixed(2) +
-			"ms",
+		"Generation benchmark (" + opts.tests + " tests): func=" + tFunc.toFixed(2) + "ms eval=" + tEval.toFixed(2) + "ms",
 	);
 }
 

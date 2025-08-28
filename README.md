@@ -14,7 +14,7 @@ QuickHashGen generates tiny, collision-free hash functions and lookup tables for
 A Node-based CLI is provided:
 
 ```
-node QuickHashGenCLI.js [options] [input-file]
+node QuickHashGenCLI.node.js [options] [input-file]
 ```
 
 Options:
@@ -58,7 +58,7 @@ allowing spaces and binary data.
 Example generating C code:
 
 ```
-printf "red\ngreen\nblue\n" | node QuickHashGenCLI.js > lookup.c
+printf "red\ngreen\nblue\n" | node QuickHashGenCLI.node.js > lookup.c
 ```
 
 The generated `lookup` function returns the index of a matching string or `-1` if the string is absent.
@@ -68,7 +68,7 @@ The generated `lookup` function returns the index of a matching string or `-1` i
 As a concrete example, the 16 HTML color keywords can be hashed like so:
 
 ```bash
-printf "black\nsilver\ngray\nwhite\nmaroon\nred\npurple\nfuchsia\ngreen\nlime\nolive\nyellow\nnavy\nblue\nteal\naqua\n" | node QuickHashGenCLI.js > colors.c
+printf "black\nsilver\ngray\nwhite\nmaroon\nred\npurple\nfuchsia\ngreen\nlime\nolive\nyellow\nnavy\nblue\nteal\naqua\n" | node QuickHashGenCLI.node.js > colors.c
 ```
 
 The resulting `colors.c` starts like this:
@@ -218,7 +218,7 @@ debugging during development, set the `NODE_ENV` environment variable
 to `development` before executing any scripts. For example:
 
 ```
-NODE_ENV=development node QuickHashGenCLI.js --help
+NODE_ENV=development node QuickHashGenCLI.node.js --help
 ```
 
 With `NODE_ENV` unset or set to `production`, these assertions and tests

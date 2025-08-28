@@ -16,34 +16,18 @@ const maxSize = minSize * 8;
 const seed = 1;
 
 function findSolution(zeroTerminated) {
-	const qh = new core.QuickHashGen(
-		strings,
-		minSize,
-		maxSize,
-		zeroTerminated,
-		true,
-		true,
-		false,
-		false,
-		seed,
-	);
+	const qh = new core.QuickHashGen(strings, minSize, maxSize, zeroTerminated, true, true, false, false, seed);
 	const complexityRng = new core.XorshiftPRNG2x32(seed);
 	let best = null;
 	const tests = 1000;
 	while (qh.getTestedCount() < tests) {
-		const complexity =
-			complexityRng.nextInt(best === null ? 32 : best.complexity) + 1;
+		const complexity = complexityRng.nextInt(best === null ? 32 : best.complexity) + 1;
 		const remaining = tests - qh.getTestedCount();
-		const iters = Math.max(
-			1,
-			Math.min(remaining, Math.floor(200 / strings.length)),
-		);
+		const iters = Math.max(1, Math.min(remaining, Math.floor(200 / strings.length)));
 		const found = qh.search(complexity, iters);
 		if (
 			found &&
-			(best === null ||
-				found.cost < best.cost ||
-				(found.cost === best.cost && found.table.length < best.table.length))
+			(best === null || found.cost < best.cost || (found.cost === best.cost && found.table.length < best.table.length))
 		) {
 			best = found;
 			if (best.complexity === 1) break;
@@ -73,17 +57,7 @@ const minDup = nextPow2(dupStrings.length);
 const maxDup = minDup * 8;
 let dupThrown = false;
 try {
-	new core.QuickHashGen(
-		dupStrings,
-		minDup,
-		maxDup,
-		true,
-		true,
-		true,
-		false,
-		false,
-		seed,
-	);
+	new core.QuickHashGen(dupStrings, minDup, maxDup, true, true, true, false, false, seed);
 } catch (e) {
 	dupThrown = true;
 }

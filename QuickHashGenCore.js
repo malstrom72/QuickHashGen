@@ -2,11 +2,7 @@
 // Core hashing algorithm extracted for reuse in browser and CLI tools.
 
 // Enable debug assertions by setting NODE_ENV=development.
-var DEBUG =
-	typeof process !== "undefined" &&
-	process &&
-	process.env &&
-	process.env.NODE_ENV === "development";
+var DEBUG = typeof process !== "undefined" && process && process.env && process.env.NODE_ENV === "development";
 
 var assert;
 if (DEBUG) {
@@ -17,10 +13,7 @@ if (DEBUG) {
 	AssertionError.prototype = Error.prototype;
 	assert = function (condition, message) {
 		if (!condition) {
-			if (
-				typeof console !== "undefined" &&
-				typeof console.assert === "function"
-			) {
+			if (typeof console !== "undefined" && typeof console.assert === "function") {
 				console.assert(condition, message);
 			}
 			throw new AssertionError(message);
@@ -34,11 +27,7 @@ var C_ESCAPE_CHARS = "\\\"\'abfnrtv?";
 
 var C_ESCAPE_CODES = "\\\"\'\x07\b\f\n\r\t\v?";
 
-if (DEBUG)
-	assert(
-		C_ESCAPE_CODES.length === C_ESCAPE_CHARS.length,
-		"C_ESCAPE_CODES.length === C_ESCAPE_CHARS.length",
-	);
+if (DEBUG) assert(C_ESCAPE_CODES.length === C_ESCAPE_CHARS.length, "C_ESCAPE_CODES.length === C_ESCAPE_CHARS.length");
 
 function XorshiftPRNG2x32(seed0, seed1) {
 	if (typeof seed0 === "undefined") seed0 = 123456789;
@@ -60,10 +49,7 @@ function XorshiftPRNG2x32(seed0, seed1) {
 
 	this.nextFloat = function () {
 		next();
-		return (
-			(py >>> 0) * 2.3283064365386962890625e-10 +
-			(px >>> 0) * 5.42101086242752217003726400434970855712890625e-20
-		);
+		return (py >>> 0) * 2.3283064365386962890625e-10 + (px >>> 0) * 5.42101086242752217003726400434970855712890625e-20;
 	};
 
 	this.nextInt = function (max) {
@@ -78,8 +64,7 @@ function XorshiftPRNG2x32(seed0, seed1) {
 
 // Returns pair: [ string, length ]
 function parseCString(s) {
-	if (DEBUG)
-		assert(s[0] === '\"' || s[0] === "'", "s[0] === '\"' || s[0] === '\''");
+	if (DEBUG) assert(s[0] === '\"' || s[0] === "'", "s[0] === '\"' || s[0] === '\''");
 
 	var o = "";
 	var i = 1;
@@ -104,27 +89,20 @@ function parseCString(s) {
 						break;
 
 					case "u":
-						while (
-							i < s.length &&
-							"0123456789abcdefABCDEF".indexOf(s[i]) >= 0 &&
-							i < b + 4
-						)
-							++i;
+						while (i < s.length && "0123456789abcdefABCDEF".indexOf(s[i]) >= 0 && i < b + 4) ++i;
 						if (i !== b + 4) throw new Error("Illegal C escape sequence");
 						o += String.fromCharCode(parseInt(s.substring(b, i), 16));
 						break;
 
 					case "x":
-						while (i < s.length && "0123456789abcdefABCDEF".indexOf(s[i]) >= 0)
-							++i;
+						while (i < s.length && "0123456789abcdefABCDEF".indexOf(s[i]) >= 0) ++i;
 						if (i === b) throw new Error("Illegal C escape sequence");
 						o += String.fromCharCode(parseInt(s.substring(b, i), 16));
 						break;
 
 					default:
 						b = --i;
-						while (i < s.length && "01234567".indexOf(s[i]) >= 0 && i < b + 3)
-							++i;
+						while (i < s.length && "01234567".indexOf(s[i]) >= 0 && i < b + 3) ++i;
 						if (i === b) throw new Error("Illegal C escape sequence");
 						o += String.fromCharCode(parseInt(s.substring(b, i), 8));
 						break;
@@ -152,13 +130,7 @@ function escapeCString(s) {
 	for (var i = 0; i < s.length; ++i) {
 		var c = s[i];
 		var v = c.charCodeAt(0);
-		if (
-			v < 32 ||
-			v >= 127 ||
-			c === '\"' ||
-			c === "\\" ||
-			forbid.indexOf(c) >= 0
-		) {
+		if (v < 32 || v >= 127 || c === '\"' || c === "\\" || forbid.indexOf(c) >= 0) {
 			forbid = "";
 			o += s.substring(b, i);
 			var index = C_ESCAPE_CODES.indexOf(c);
@@ -186,18 +158,10 @@ function escapeCString(s) {
 
 if (DEBUG) {
 	// Quick-and-dirty tests
-	var p = parseCString(
-		'"ab\\0cdef\\\\gjio\\n\\\r\nx\\x45\\u0045\\u0123\\?\\053\\1012end"slack',
-	);
+	var p = parseCString('"ab\\0cdef\\\\gjio\\n\\\r\nx\\x45\\u0045\\u0123\\?\\053\\1012end"slack');
 	assert(p[0] === "ab\0cdef\\gjio\nxEE\u0123?+A2end" && p[1] === 52);
-	assert(
-		escapeCString("hej \n \x22''\\ \x04 \u2414 \0 \r du") ===
-			'"hej \\n \\"\'\'\\\\ \\x04 \\u2414 \\0 \\r du"',
-	);
-	assert(
-		escapeCString("\x050018efgef") ===
-			'"\\x05\\x30\\x30\\x31\\x38\\x65\\x66gef"',
-	); // \x in C++ is greedy (stupid)
+	assert(escapeCString("hej \n \x22''\\ \x04 \u2414 \0 \r du") === '"hej \\n \\"\'\'\\\\ \\x04 \\u2414 \\0 \\r du"');
+	assert(escapeCString("\x050018efgef") === '"\\x05\\x30\\x30\\x31\\x38\\x65\\x66gef"'); // \x in C++ is greedy (stupid)
 	assert(escapeCString("\u050018efgef") === '"\\u050018efgef"'); // \u isn't greedy
 }
 
@@ -222,18 +186,11 @@ function stringListToC(strings, maxCols, pre) {
 var RADIX_PREFIXES = { 8: "0", 10: "", 16: "0x" };
 
 function numberListToC(numbers, elementsPerLine, radix, pre) {
-	if (DEBUG)
-		assert(
-			radix === 0 || radix in RADIX_PREFIXES,
-			"radix === 0 || radix in RADIX_PREFIXES",
-		);
+	if (DEBUG) assert(radix === 0 || radix in RADIX_PREFIXES, "radix === 0 || radix in RADIX_PREFIXES");
 	var s = "";
 	var n = numbers.length;
 	for (var i = 0; i < n; ++i) {
-		s +=
-			radix === 0
-				? numbers[i]
-				: RADIX_PREFIXES[radix] + numbers[i].toString(radix);
+		s += radix === 0 ? numbers[i] : RADIX_PREFIXES[radix] + numbers[i].toString(radix);
 		if (i < n - 1) {
 			s += ", ";
 			if (i % elementsPerLine === elementsPerLine - 1) {
@@ -322,9 +279,7 @@ function QuickHashGen(
 		try {
 			fn = eval("(function(n,w){return " + expr + ";})");
 		} catch (e) {
-			throw new Error(
-				"Eval compile error: " + (e && e.message ? e.message : String(e)),
-			);
+			throw new Error("Eval compile error: " + (e && e.message ? e.message : String(e)));
 		}
 		var minLen = Infinity;
 		for (var i = 0; i < strings.length; ++i) {
@@ -347,12 +302,7 @@ function QuickHashGen(
 			try {
 				idx = fn(n, arr) & (mod - 1);
 			} catch (e2) {
-				throw new Error(
-					"Eval runtime error on #" +
-						j +
-						": " +
-						(e2 && e2.message ? e2.message : String(e2)),
-				);
+				throw new Error("Eval runtime error on #" + j + ": " + (e2 && e2.message ? e2.message : String(e2)));
 			}
 			var idxFunc = foundSolution.hashes[j] & (mod - 1);
 			if (idx !== idxFunc || foundSolution.table[idx] !== j) {
@@ -362,13 +312,7 @@ function QuickHashGen(
 		return { checked: strings.length };
 	}
 
-	function generateRandomExpression(
-		rnd,
-		complexity,
-		constantMask,
-		cpp,
-		compact,
-	) {
+	function generateRandomExpression(rnd, complexity, constantMask, cpp, compact) {
 		// Unified generator: builds a single AST that yields
 		//  - .c  : C/C++ source
 		//  - .js : JS source equivalent
@@ -625,8 +569,7 @@ function QuickHashGen(
 			],
 		];
 		var opFrom = allowLength ? 0 : 1;
-		var opCount =
-			OPS.length - (allowMultiplication ? 0 : 1) - (allowLength ? 0 : 1);
+		var opCount = OPS.length - (allowMultiplication ? 0 : 1) - (allowLength ? 0 : 1);
 		function rndExpr(c, prec) {
 			if (DEBUG) assert(c > 0, "c>0");
 			var op;
@@ -655,13 +598,11 @@ function QuickHashGen(
 		if (DEBUG) {
 			assert(0 < complexity, "0 < complexity");
 			assert(
-				minTableSize | (0 === minTableSize) &&
-					(minTableSize & (minTableSize - 1)) === 0,
+				minTableSize | (0 === minTableSize) && (minTableSize & (minTableSize - 1)) === 0,
 				"minTableSize | 0 === minTableSize && (minTableSize & (minTableSize - 1)) === 0",
 			);
 			assert(
-				maxTableSize | (0 === maxTableSize) &&
-					(maxTableSize & (maxTableSize - 1)) === 0,
+				maxTableSize | (0 === maxTableSize) && (maxTableSize & (maxTableSize - 1)) === 0,
 				"maxTableSize | 0 === maxTableSize && (maxTableSize & (maxTableSize - 1)) === 0",
 			);
 		}
@@ -675,13 +616,7 @@ function QuickHashGen(
 		var rnd = prng;
 		for (var i = 0; i < iterations; ++i) {
 			var prngCopy = rnd.clone();
-			var exprObj = generateRandomExpression(
-				rnd,
-				complexity,
-				maxTableSize - 1,
-				false,
-				false,
-			);
+			var exprObj = generateRandomExpression(rnd, complexity, maxTableSize - 1, false, false);
 			var expr = exprObj.js;
 			var exprCost = exprObj.cost;
 
@@ -715,10 +650,7 @@ function QuickHashGen(
 				while (!found && tableSize <= maxTableSize) {
 					var j = 0;
 					var hash;
-					while (
-						j < stringsCount &&
-						collisions[(hash = hashes[j] & (tableSize - 1))] !== counter
-					) {
+					while (j < stringsCount && collisions[(hash = hashes[j] & (tableSize - 1))] !== counter) {
 						collisions[hash] = counter;
 						++j;
 					}
@@ -734,8 +666,7 @@ function QuickHashGen(
 					var table = new Array(tableSize);
 					for (var j = 0; j < tableSize; ++j) table[j] = -1;
 					for (var j = 0; j < stringsCount; ++j) {
-						var hash =
-							func(strings[j].length, stringChars[j]) & (tableSize - 1);
+						var hash = func(strings[j].length, stringChars[j]) & (tableSize - 1);
 						if (DEBUG) assert(table[hash] === -1, "table[hash] === -1");
 						table[hash] = j;
 					}
@@ -815,9 +746,7 @@ function QuickHashGen(
 				return cExpression;
 			},
 			stringDescription: function () {
-				return zeroTerminated
-					? "zero terminated"
-					: "zero termination not required";
+				return zeroTerminated ? "zero terminated" : "zero termination not required";
 			},
 			seed: function () {
 				return seed0;
@@ -1020,10 +949,7 @@ function updateCCodeWithSolution(code, qh, foundSolution, templateOptions) {
 		var openIdx = code.indexOf("[", declStart) + 1;
 		var closeIdx = code.indexOf("]", openIdx);
 		if (openIdx > 0 && closeIdx > openIdx) {
-			code =
-				code.slice(0, openIdx) +
-				String(foundSolution.table.length) +
-				code.slice(closeIdx);
+			code = code.slice(0, openIdx) + String(foundSolution.table.length) + code.slice(closeIdx);
 		}
 	}
 
@@ -1038,10 +964,7 @@ function updateCCodeWithSolution(code, qh, foundSolution, templateOptions) {
 
 	// 3) Update the hash expression inside HASH_TABLE[...]
 	var useStart = code.indexOf("int stringIndex");
-	var startIdx =
-		useStart >= 0
-			? code.indexOf("HASH_TABLE[", useStart)
-			: code.lastIndexOf("HASH_TABLE[");
+	var startIdx = useStart >= 0 ? code.indexOf("HASH_TABLE[", useStart) : code.lastIndexOf("HASH_TABLE[");
 	if (startIdx >= 0) {
 		var bOpen = code.indexOf("[", startIdx);
 		var bClose = findMatchingSquare(code, bOpen);
@@ -1059,16 +982,9 @@ function updateCCodeWithSolution(code, qh, foundSolution, templateOptions) {
 		if (code.substr(insertPos, 8) === "// Seed:") {
 			var lineEnd = code.indexOf("\n", insertPos);
 			if (lineEnd < 0) lineEnd = code.length;
-			code =
-				code.slice(0, insertPos) +
-				formatSeedComment(qh.getSeed()) +
-				code.slice(lineEnd);
+			code = code.slice(0, insertPos) + formatSeedComment(qh.getSeed()) + code.slice(lineEnd);
 		} else {
-			code =
-				code.slice(0, insertPos) +
-				formatSeedComment(qh.getSeed()) +
-				"\n" +
-				code.slice(insertPos);
+			code = code.slice(0, insertPos) + formatSeedComment(qh.getSeed()) + "\n" + code.slice(insertPos);
 		}
 	}
 
