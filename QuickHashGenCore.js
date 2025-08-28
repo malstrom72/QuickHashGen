@@ -692,13 +692,7 @@ function QuickHashGen(
 	};
 
 	function buildExpression(foundSolution) {
-		var exprObj = generateRandomExpression(
-			foundSolution.prng.clone(),
-			foundSolution.complexity,
-			maxTableSize - 1,
-			true,
-			true,
-		);
+		var exprObj = generateRandomExpression(foundSolution.prng.clone(), foundSolution.complexity, maxTableSize - 1, true, true);
 		var mask = foundSolution.table.length - 1;
 		return { exprObj: exprObj, mask: mask };
 	}

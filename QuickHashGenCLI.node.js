@@ -108,10 +108,7 @@ let best = null;
 while (qh.getTestedCount() < opts.tests) {
 	const remaining = opts.tests - qh.getTestedCount();
 	const found = core.scheduleStep(qh, best, complexityPRNG, strings.length, remaining);
-	if (
-		found &&
-		(best === null || found.cost < best.cost || (found.cost === best.cost && found.table.length < best.table.length))
-	) {
+	if (found && (best === null || found.cost < best.cost || (found.cost === best.cost && found.table.length < best.table.length))) {
 		best = found;
 		if (best.complexity === 1) break;
 	}
@@ -158,9 +155,7 @@ if (opts.bench) {
 	}
 	let tFunc = benchGeneration(false);
 	let tEval = benchGeneration(true);
-	console.error(
-		"Generation benchmark (" + opts.tests + " tests): func=" + tFunc.toFixed(2) + "ms eval=" + tEval.toFixed(2) + "ms",
-	);
+	console.error("Generation benchmark (" + opts.tests + " tests): func=" + tFunc.toFixed(2) + "ms eval=" + tEval.toFixed(2) + "ms");
 }
 
 const TEMPLATE = core.makeCTemplate({

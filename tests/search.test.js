@@ -25,10 +25,7 @@ function findSolution(zeroTerminated) {
 		const remaining = tests - qh.getTestedCount();
 		const iters = Math.max(1, Math.min(remaining, Math.floor(200 / strings.length)));
 		const found = qh.search(complexity, iters);
-		if (
-			found &&
-			(best === null || found.cost < best.cost || (found.cost === best.cost && found.table.length < best.table.length))
-		) {
+		if (found && (best === null || found.cost < best.cost || (found.cost === best.cost && found.table.length < best.table.length))) {
 			best = found;
 			if (best.complexity === 1) break;
 		}

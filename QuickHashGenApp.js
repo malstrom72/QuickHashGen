@@ -288,8 +288,7 @@ function updateOutput() {
 		}
 		var s = "";
 		for (var i = 0; i < strings.length; ++i)
-			s +=
-				escapeCString(strings[i]) + " : " + (best.hashes[i] & (best.table.length - 1)) + " (" + best.hashes[i] + ")\n";
+			s += escapeCString(strings[i]) + " : " + (best.hashes[i] & (best.table.length - 1)) + " (" + best.hashes[i] + ")\n";
 		elements.hashes.textContent = s;
 	} else elements.hashes.textContent = "";
 	updateModeLabel();
@@ -308,11 +307,7 @@ function intervalFunction() {
 				};
 				var found = scheduleStep(theHashMaker, best, rng, strings.length, undefined);
 				if (found !== null) {
-					if (
-						best === null ||
-						found.cost < best.cost ||
-						(found.cost === best.cost && found.table.length < best.table.length)
-					) {
+					if (best === null || found.cost < best.cost || (found.cost === best.cost && found.table.length < best.table.length)) {
 						best = found;
 						updateOutput();
 					}
@@ -349,10 +344,7 @@ function rewriteZeroTerminationMode(code, zeroTerminated) {
 				"\tassert(s[n] == '\\0');",
 			);
 		} else {
-			code = code.replace(
-				/\tassert\(s\[n\]\s*==\s*'\\0'\);/m,
-				"\t// zero-termination not expected\n\t// assert(s[n] == '\\0');",
-			);
+			code = code.replace(/\tassert\(s\[n\]\s*==\s*'\\0'\);/m, "\t// zero-termination not expected\n\t// assert(s[n] == '\\0');");
 		}
 		// 3) Replace the entire return statement deterministically without regex pitfalls.
 		(function () {
