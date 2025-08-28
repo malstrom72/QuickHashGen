@@ -251,27 +251,27 @@ are skipped.
 
 ## Fuzz loop (native)
 
-The `testLoopNode.sh` script continuously fuzzes QuickHashGen by generating random
-string sets, emitting C++ via `QuickHashGenTest.node.js`, compiling with `g++`,
+The `tests/testLoopNode.sh` script continuously fuzzes QuickHashGen by generating random
+string sets, emitting C++ via `tests/QuickHashGenTest.node.js`, compiling with `g++`,
 and executing the resulting binary. This helps surface edge cases and regressions.
 
 - Requirements: Node.js and a C++ compiler (`g++`) available on PATH.
 - Run (POSIX/macOS/Linux):
   ```sh
-  chmod +x testLoopNode.sh
-  ./testLoopNode.sh
+  chmod +x tests/testLoopNode.sh
+  ./tests/testLoopNode.sh
   ```
 - Behavior: prints `seed <N>` for each iteration, builds to a temporary folder,
   runs the binary, and repeats with the next seed until you stop it (Ctrl-C).
   Temporary files are cleaned up automatically.
 - Reproduce a failing case: take the printed seed `N` and run:
   ```sh
-  node QuickHashGenTest.node.js N > /tmp/test.cpp
+  node tests/QuickHashGenTest.node.js N > /tmp/test.cpp
   g++ -o /tmp/test /tmp/test.cpp
   /tmp/test
   ```
 
-Note: `QuickHashGenTest.node.js` seeds the generator deterministically from `N`,
+Note: `tests/QuickHashGenTest.node.js` seeds the generator deterministically from `N`,
 so the same seed reproduces the same dataset and result.
 
 ## Browser interface
