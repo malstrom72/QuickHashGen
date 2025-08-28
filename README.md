@@ -150,6 +150,31 @@ const cExpr = gen.generateCExpression(best);
 console.log(cExpr);
 ```
 
+### Shared Helpers
+
+QuickHashGen exposes a few helper functions used by both the CLI and the web UI.
+These make it easier to integrate the engine and keep behavior consistent:
+
+- `makeCTemplate(options)`:
+  - Builds a C template string for `generateCOutput`.
+  - Options: `{ zeroTerminated, functionName, header?, includeAssert?, includeSeedComment? }`.
+- `computeTableBounds(strings)`:
+  - Returns `{ minSize, maxSize }` where `minSize` is the next power of two ≥ `strings.length` and `maxSize = minSize * 8`.
+- `iterationsFor(stringsLength, base=200)`:
+  - Computes a per-iteration budget `Math.max(1, Math.floor(base / stringsLength))` for smoother progress.
+- `scheduleStep(qh, best, rng, stringsLength, remainingTests?)`:
+  - Chooses a complexity and iteration budget, then performs one search step on a `QuickHashGen` instance.
+  - `rng` must provide `nextInt(max)`.
+- Seed helpers:
+  - `parseSeedComment(text)` parses `// Seed: N` from a C snippet.
+  - `formatSeedComment(seed)` returns the normalized seed comment string.
+- C code patching helpers:
+  - `updateCCodeWithSolution(code, qh, found, templateOptions)` updates an existing C snippet in-place (table size, initializer, hash expr, seed comment), or generates a new one if none is present.
+  - `findInitializerRange(code, declStart)` and `findMatchingSquare(code, openIndex)` are exposed for custom patching.
+  - `updateCCodeMetadata(code, strings?)` updates `STRINGS[...]` length and the `if (n < .. || n > ..)` guard based on a list of strings; if `strings` is omitted, it tries to extract strings from the code.
+
+These helpers are exported from `QuickHashGenCore.js` and are used internally by both the CLI and the browser UI to keep outputs aligned.
+
 ### Core API
 
 `QuickHashGenCore.js` exports a handful of helpers and the `QuickHashGen`

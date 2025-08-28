@@ -5,6 +5,7 @@ node tests/parseQuickHashGenInput.test.js
 node tests/parseCString.test.js
 node tests/cli.test.js
 node tests/search.test.js
+node tests/helpers.test.js
 
 node QuickHashGenCLI.node.js --seed 1 --tests 100 tests/input1.txt > tests/out1.c
 # help flag should print usage and succeed

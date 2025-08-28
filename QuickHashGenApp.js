@@ -263,46 +263,16 @@ function resetSearch() {
 	}
 }
 function updateCodeMetadata() {
-	try {
-		var code = elements.editor.value || "";
-		if (code.indexOf("STRINGS") < 0) return;
-		var list = Array.isArray(strings) && strings.length ? strings : parseStringsFromEditor(code);
-		var count = list.length,
-			minLen = Infinity,
-			maxLen = 0;
-		for (var i = 0; i < list.length; ++i) {
-			var n = list[i].length;
-			if (n < minLen) minLen = n;
-			if (n > maxLen) maxLen = n;
-		}
-		if (!isFinite(minLen)) {
-			minLen = 0;
-			maxLen = 0;
-		}
-		var idx = code.indexOf("STRINGS[");
-		if (idx >= 0) {
-			idx += 8;
-			var close = code.indexOf("]", idx);
-			if (close >= 0) code = code.slice(0, idx) + String(count) + code.slice(close);
-		}
-		var t0 = code.indexOf("if (n < ");
-		if (t0 >= 0) {
-			var aStart = t0 + 8,
-				aEnd = aStart;
-			while (aEnd < code.length && code.charCodeAt(aEnd) >= 48 && code.charCodeAt(aEnd) <= 57) ++aEnd;
-			var orIdx = code.indexOf("|| n > ", aEnd);
-			if (orIdx >= 0) {
-				var bStart = orIdx + 7,
-					bEnd = bStart;
-				while (bEnd < code.length && code.charCodeAt(bEnd) >= 48 && code.charCodeAt(bEnd) <= 57) ++bEnd;
-				code = code.slice(0, aStart) + String(minLen) + code.slice(aEnd, bStart) + String(maxLen) + code.slice(bEnd);
-			}
-		}
-		elements.editor.value = code;
-		lastInputText = elements.editor.value;
-	} catch (err) {
-		console.error("Failed to update code metadata", err);
-	}
+    try {
+        var code = elements.editor.value || "";
+        if (code.indexOf("STRINGS") < 0) return;
+        var list = Array.isArray(strings) && strings.length ? strings : parseStringsFromEditor(code);
+        var updated = updateCCodeMetadata(code, list);
+        elements.editor.value = updated;
+        lastInputText = updated;
+    } catch (err) {
+        console.error("Failed to update code metadata", err);
+    }
 }
 function updateOutput() {
 	if (best !== null) {
