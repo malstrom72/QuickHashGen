@@ -1,4 +1,4 @@
-var quickHashGen = require("./QuickHashGenCore");
+var quickHashGen = require("../QuickHashGenCore");
 
 var QuickHashGen = quickHashGen.QuickHashGen;
 var XorshiftPRNG2x32 = quickHashGen.XorshiftPRNG2x32;
@@ -70,7 +70,7 @@ var maxSize = minSize * MAX_SIZE_MULTIPLIER;
 // Seed QuickHashGen's internal PRNG deterministically so that a given seed
 // for this test produces identical behaviour across runs.
 // Without explicit seeds QuickHashGen would fall back to Math.random(),
-// resulting in nondeterministic failures when running testLoopNode.sh.
+// resulting in nondeterministic failures when running tests/testLoopNode.sh.
 var hashSeed0 = rnd.nextInt32();
 var hashSeed1 = rnd.nextInt32();
 var theHashMaker = new QuickHashGen(strings, minSize, maxSize, true, true, true, false, false, hashSeed0, hashSeed1);
