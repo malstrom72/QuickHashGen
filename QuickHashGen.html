@@ -90,7 +90,14 @@ line
 		<div class="controls">
 			<button id="startStop" onclick="toggleRun()">Start</button>
 			<label><input id="allowMultiplications" type="checkbox" checked />Allow Multiplications</label>
-			<label><input id="allowLength" type="checkbox" checked title="Allow length n in the hash expression. This often reduces collisions and table size, especially when strings share prefixes/suffixes." />Allow n in hash</label>
+			<label
+				><input
+					id="allowLength"
+					type="checkbox"
+					checked
+					title="Allow length n in the hash expression. This often reduces collisions and table size, especially when strings share prefixes/suffixes."
+				/>Allow n in hash</label
+			>
 			<label><input id="requireZeroTermination" type="checkbox" checked />Expect Zero Termination</label>
 			<label><input id="evalTest" type="checkbox" />Eval-test expression</label>
 			<label><input id="forceEval" type="checkbox" />Use eval engine (if available)</label>

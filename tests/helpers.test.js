@@ -49,9 +49,21 @@ const core = require("../QuickHashGenCore");
 		}
 	}
 	assert(best, "no solution found for helper round-trip test");
-	const tpl = core.makeCTemplate({ zeroTerminated: true, functionName: "lookup", header: "/* Built with QuickHashGen CLI */\n", includeSeedComment: true, includeAssert: false });
+	const tpl = core.makeCTemplate({
+		zeroTerminated: true,
+		functionName: "lookup",
+		header: "/* Built with QuickHashGen CLI */\n",
+		includeSeedComment: true,
+		includeAssert: false,
+	});
 	const full = qh.generateCOutput(tpl, best);
-	const patched = core.updateCCodeWithSolution(full, qh, best, { zeroTerminated: true, functionName: "lookup", header: "/* Built with QuickHashGen CLI */\n", includeSeedComment: true, includeAssert: false });
+	const patched = core.updateCCodeWithSolution(full, qh, best, {
+		zeroTerminated: true,
+		functionName: "lookup",
+		header: "/* Built with QuickHashGen CLI */\n",
+		includeSeedComment: true,
+		includeAssert: false,
+	});
 	assert.strictEqual(patched, full);
 }
 
@@ -59,21 +71,21 @@ console.log("helpers tests passed");
 
 // updateCCodeMetadata should update STRINGS size and n-guard
 {
-    const code0 =
-        "/* Built with QuickHashGen */\n" +
-        "// Seed: 1\n" +
-        "static int lookup(int n, const char* s /* string (zero terminated) */) {\n" +
-        "\tstatic const char* STRINGS[2] = { \"a\", \"bbb\" };\n" +
-        "\tstatic const int HASH_TABLE[4] = { 0, 1, 2, 3 };\n" +
-        "\tconst unsigned char* p = (const unsigned char*) s;\n" +
-        "\tif (n < 0 || n > 0) return -1;\n" +
-        "\tint stringIndex = HASH_TABLE[(n + p[0]) & 3];\n" +
-        "\treturn (stringIndex >= 0 && strcmp(s, STRINGS[stringIndex]) == 0) ? stringIndex : -1;\n" +
-        "}\n";
-    const strings2 = ["a", "bbb", "cc"]; // minLen=1, maxLen=3, count=3
-    const updated = core.updateCCodeMetadata(code0, strings2);
-    // STRINGS size updated
-    assert(updated.includes("STRINGS[3]"));
-    // Guard updated to new min/max
-    assert(updated.includes("if (n < 1 || n > 3)"));
+	const code0 =
+		"/* Built with QuickHashGen */\n" +
+		"// Seed: 1\n" +
+		"static int lookup(int n, const char* s /* string (zero terminated) */) {\n" +
+		'\tstatic const char* STRINGS[2] = { "a", "bbb" };\n' +
+		"\tstatic const int HASH_TABLE[4] = { 0, 1, 2, 3 };\n" +
+		"\tconst unsigned char* p = (const unsigned char*) s;\n" +
+		"\tif (n < 0 || n > 0) return -1;\n" +
+		"\tint stringIndex = HASH_TABLE[(n + p[0]) & 3];\n" +
+		"\treturn (stringIndex >= 0 && strcmp(s, STRINGS[stringIndex]) == 0) ? stringIndex : -1;\n" +
+		"}\n";
+	const strings2 = ["a", "bbb", "cc"]; // minLen=1, maxLen=3, count=3
+	const updated = core.updateCCodeMetadata(code0, strings2);
+	// STRINGS size updated
+	assert(updated.includes("STRINGS[3]"));
+	// Guard updated to new min/max
+	assert(updated.includes("if (n < 1 || n > 3)"));
 }

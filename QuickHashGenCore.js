@@ -989,52 +989,52 @@ function updateCCodeWithSolution(code, qh, foundSolution, templateOptions) {
 // If `strings` is omitted or empty, this function tries to extract strings from `code`.
 // Returns the updated code string (or the original if no changes applied).
 function updateCCodeMetadata(code, strings) {
-    code = String(code || "");
-    if (code.indexOf("STRINGS") < 0) return code;
+	code = String(code || "");
+	if (code.indexOf("STRINGS") < 0) return code;
 
-    // Determine string list
-    var list = Array.isArray(strings) && strings.length ? strings : parseQuickHashGenInput(code);
-    var count = list.length;
-    var minLen = Infinity;
-    var maxLen = 0;
-    for (var i = 0; i < list.length; ++i) {
-        var n = list[i].length;
-        if (n < minLen) minLen = n;
-        if (n > maxLen) maxLen = n;
-    }
-    if (!isFinite(minLen)) {
-        minLen = 0;
-        maxLen = 0;
-    }
+	// Determine string list
+	var list = Array.isArray(strings) && strings.length ? strings : parseQuickHashGenInput(code);
+	var count = list.length;
+	var minLen = Infinity;
+	var maxLen = 0;
+	for (var i = 0; i < list.length; ++i) {
+		var n = list[i].length;
+		if (n < minLen) minLen = n;
+		if (n > maxLen) maxLen = n;
+	}
+	if (!isFinite(minLen)) {
+		minLen = 0;
+		maxLen = 0;
+	}
 
-    // 1) Update STRINGS[...] size literal
-    var idx = code.indexOf("STRINGS[");
-    if (idx >= 0) {
-        idx += 8;
-        var close = code.indexOf("]", idx);
-        if (close >= 0) code = code.slice(0, idx) + String(count) + code.slice(close);
-    }
+	// 1) Update STRINGS[...] size literal
+	var idx = code.indexOf("STRINGS[");
+	if (idx >= 0) {
+		idx += 8;
+		var close = code.indexOf("]", idx);
+		if (close >= 0) code = code.slice(0, idx) + String(count) + code.slice(close);
+	}
 
-    // 2) Update the if-guard for n range: if (n < X || n > Y)
-    var t0 = code.indexOf("if (n < ");
-    if (t0 >= 0) {
-        var aStart = t0 + 8;
-        var aEnd = aStart;
-        while (aEnd < code.length && code.charCodeAt(aEnd) >= 48 && code.charCodeAt(aEnd) <= 57) ++aEnd;
-        var orIdx = code.indexOf("|| n > ", aEnd);
-        if (orIdx >= 0) {
-            var bStart = orIdx + 7;
-            var bEnd = bStart;
-            while (bEnd < code.length && code.charCodeAt(bEnd) >= 48 && code.charCodeAt(bEnd) <= 57) ++bEnd;
-            code = code.slice(0, aStart) + String(minLen) + code.slice(aEnd, bStart) + String(maxLen) + code.slice(bEnd);
-        }
-    }
+	// 2) Update the if-guard for n range: if (n < X || n > Y)
+	var t0 = code.indexOf("if (n < ");
+	if (t0 >= 0) {
+		var aStart = t0 + 8;
+		var aEnd = aStart;
+		while (aEnd < code.length && code.charCodeAt(aEnd) >= 48 && code.charCodeAt(aEnd) <= 57) ++aEnd;
+		var orIdx = code.indexOf("|| n > ", aEnd);
+		if (orIdx >= 0) {
+			var bStart = orIdx + 7;
+			var bEnd = bStart;
+			while (bEnd < code.length && code.charCodeAt(bEnd) >= 48 && code.charCodeAt(bEnd) <= 57) ++bEnd;
+			code = code.slice(0, aStart) + String(minLen) + code.slice(aEnd, bStart) + String(maxLen) + code.slice(bEnd);
+		}
+	}
 
-    return code;
+	return code;
 }
 
 if (typeof module !== "undefined") {
-module.exports = {
+	module.exports = {
 		assert: assert,
 		XorshiftPRNG2x32: XorshiftPRNG2x32,
 		toHex: toHex,
@@ -1054,6 +1054,6 @@ module.exports = {
 		findMatchingSquare: findMatchingSquare,
 		scheduleStep: scheduleStep,
 		updateCCodeWithSolution: updateCCodeWithSolution,
-        updateCCodeMetadata: updateCCodeMetadata,
+		updateCCodeMetadata: updateCCodeMetadata,
 	};
 }

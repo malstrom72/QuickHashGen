@@ -263,16 +263,16 @@ function resetSearch() {
 	}
 }
 function updateCodeMetadata() {
-    try {
-        var code = elements.editor.value || "";
-        if (code.indexOf("STRINGS") < 0) return;
-        var list = Array.isArray(strings) && strings.length ? strings : parseStringsFromEditor(code);
-        var updated = updateCCodeMetadata(code, list);
-        elements.editor.value = updated;
-        lastInputText = updated;
-    } catch (err) {
-        console.error("Failed to update code metadata", err);
-    }
+	try {
+		var code = elements.editor.value || "";
+		if (code.indexOf("STRINGS") < 0) return;
+		var list = Array.isArray(strings) && strings.length ? strings : parseStringsFromEditor(code);
+		var updated = updateCCodeMetadata(code, list);
+		elements.editor.value = updated;
+		lastInputText = updated;
+	} catch (err) {
+		console.error("Failed to update code metadata", err);
+	}
 }
 function updateOutput() {
 	if (best !== null) {
