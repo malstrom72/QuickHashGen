@@ -26,6 +26,7 @@ var HTML_ELEMENTS = [
 	"forceEval",
 	"hashes",
 	"startStop",
+	"copyButton",
 	"testStatus",
 ];
 var elements = {};
@@ -126,6 +127,25 @@ function toggleRun() {
 	updateCodeMetadata(); // sync STRINGS length and min/max guard
 }
 window.toggleRun = toggleRun; // expose for inline onclick
+
+function copyHashes() {
+	try {
+		var text = elements.hashes && elements.hashes.textContent ? elements.hashes.textContent : "";
+		if (navigator.clipboard && navigator.clipboard.writeText) {
+			navigator.clipboard.writeText(text);
+		} else {
+			var t = document.createElement("textarea");
+			t.value = text;
+			document.body.appendChild(t);
+			t.select();
+			document.execCommand("copy");
+			document.body.removeChild(t);
+		}
+	} catch (err) {
+		console.error("Copy failed", err);
+	}
+}
+window.copyHashes = copyHashes;
 function parseStringsFromEditor(text) {
 	var p = text.indexOf("STRINGS");
 	if (p >= 0) {
