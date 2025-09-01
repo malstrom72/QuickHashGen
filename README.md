@@ -50,7 +50,6 @@ Options:
 - `--seed N`: seed all internal randomness with a single 32-bit value for fully deterministic
   output.
 
-
 ### Input formats
 
 Strings are read from a file or standard input. Each line may be:
@@ -167,35 +166,33 @@ QuickHashGen exposes a few helper functions used by both the CLI and the web UI.
 These make it easier to integrate the engine and keep behavior consistent:
 
 - `makeCTemplate(options)`:
-	- Builds a C template string for `generateCOutput`.
-	- Options: `{ zeroTerminated, functionName, header?, includeAssert?, includeSeedComment? }`.
+  - Builds a C template string for `generateCOutput`.
+  - Options: `{ zeroTerminated, functionName, header?, includeAssert?, includeSeedComment? }`.
 
 - `computeTableBounds(strings)`:
-	- Returns `{ minSize, maxSize }` where `minSize` is the next power of two ≥ `strings.length` and
-	  `maxSize = minSize * 8`.
+  - Returns `{ minSize, maxSize }` where `minSize` is the next power of two ≥ `strings.length` and
+    `maxSize = minSize * 8`.
 
 - `iterationsFor(stringsLength, base=200)`:
-	- Computes a per-iteration budget `Math.max(1, Math.floor(base / stringsLength))` for smoother
-	  progress.
+  - Computes a per-iteration budget `Math.max(1, Math.floor(base / stringsLength))` for smoother
+    progress.
 
-- `scheduleStep(qh, best, rng, stringsLength, remainingTests?)`:
-	- Chooses a complexity and iteration budget, then performs one search step on a `QuickHashGen`
-	  instance.
-	- `rng` must provide `nextInt(max)`.
+- `scheduleStep(qh, best, rng, stringsLength, remainingTests?)`: - Chooses a complexity up to `best.complexity + 2` and an iteration budget, then performs one
+  search step on a `QuickHashGen` instance. - Caps search cost at `best.cost` when `best` is not `null`. - `rng` must provide `nextInt(max)`.
 
 - Seed helpers:
-	- `parseSeedComment(text)` parses `// Seed: N` from a C snippet.
-	- `formatSeedComment(seed)` returns the normalized seed comment string.
+  - `parseSeedComment(text)` parses `// Seed: N` from a C snippet.
+  - `formatSeedComment(seed)` returns the normalized seed comment string.
 
 - C code patching helpers:
-	- `updateCCodeWithSolution(code, qh, found, templateOptions)` updates an existing C snippet
-	  in-place (table size, initializer, hash expr, seed comment), or generates a new one if none
-	  is present.
-	- `findInitializerRange(code, declStart)` and `findMatchingSquare(code, openIndex)` are exposed
-	  for custom patching.
-	- `updateCCodeMetadata(code, strings?)` updates `STRINGS[...]` length and the `if (n < .. ||
-	  n > ..)` guard based on a list of strings; if `strings` is omitted, it tries to extract
-	  strings from the code.
+  - `updateCCodeWithSolution(code, qh, found, templateOptions)` updates an existing C snippet
+    in-place (table size, initializer, hash expr, seed comment), or generates a new one if none
+    is present.
+  - `findInitializerRange(code, declStart)` and `findMatchingSquare(code, openIndex)` are exposed
+    for custom patching.
+  - `updateCCodeMetadata(code, strings?)` updates `STRINGS[...]` length and the `if (n < .. ||
+n > ..)` guard based on a list of strings; if `strings` is omitted, it tries to extract
+    strings from the code.
 
 These helpers are exported from `QuickHashGenCore.js` and are used internally by both the CLI and
 the browser UI to keep outputs aligned.
@@ -206,34 +203,35 @@ the browser UI to keep outputs aligned.
 integration:
 
 - **`QuickHashGen`**: the core search engine. The constructor accepts `(strings, minTableSize,
-    maxTableSize, zeroTerminated, allowMultiplication, allowLength, useEvalEngine=false,
-    evalTest=false, seed0?, seed1?)`.
+maxTableSize, zeroTerminated, allowMultiplication, allowLength, useEvalEngine=false,
+evalTest=false, seed0?, seed1?)`.
 
-	If `seed0` is omitted the PRNG is seeded randomly; providing `seed0`(and optionally `seed1`)
-	yields deterministic output.
+  If `seed0` is omitted the PRNG is seeded randomly; providing `seed0`(and optionally `seed1`)
+  yields deterministic output.
 
-	Methods include:
+  Methods include:
 
-	- `search(complexity, iterations)`: explore random expressions and return the first
-	  collision-free solution or `null`.
-	- `getTestedCount()`: total number of expressions evaluated so far.
-	- `randomInt(max)`: draw a pseudo-random integer in `[0, max)`.
-	- `generateCExpression(solution)`: build a C hash expression string.
-	- `generateJSExpression(solution)`: build a JavaScript hash expression string.
-	- `generateJSEvaluator(solution)`: build a CSP-safe evaluator function.
-	- `generateCOutput(template, solution)`: populate a C template using a solution object returned
-	  by `search` (internally uses `generateCExpression`).
+            - `search(complexity, iterations, maxCost?)`: explore random expressions capped at
+              `maxCost` (default `Infinity`) and return the first collision-free solution or `null`.
+
+  - `getTestedCount()`: total number of expressions evaluated so far.
+  - `randomInt(max)`: draw a pseudo-random integer in `[0, max)`.
+  - `generateCExpression(solution)`: build a C hash expression string.
+  - `generateJSExpression(solution)`: build a JavaScript hash expression string.
+  - `generateJSEvaluator(solution)`: build a CSP-safe evaluator function.
+  - `generateCOutput(template, solution)`: populate a C template using a solution object returned
+    by `search` (internally uses `generateCExpression`).
 
 - **`parseQuickHashGenInput(text)`**: parse newline or C-style quoted strings into an array,
-    mirroring CLI input handling.
+  mirroring CLI input handling.
 
 - **`stringListToC(strings, columns, prefix)`** and **`numberListToC(numbers, columns, base,
-    prefix)`**: format arrays as C initializers.
+prefix)`**: format arrays as C initializers.
 
 - **`toHex(i, length)`**: format a number as a zero-padded hexadecimal string.
 
 - **`parseCString`** / **`escapeCString`**: convert between C-style quoted strings and raw
-    JavaScript strings.
+  JavaScript strings.
 
 - **`XorshiftPRNG2x32`**: deterministic pseudo-random number generator used during the search.
 
@@ -285,21 +283,22 @@ resulting binary. This helps surface edge cases and regressions.
 - Requirements: Node.js and a C++ compiler (`g++`) available on PATH.
 
 - Run (POSIX/macOS/Linux):
-	```sh
-	chmod +x tests/fuzzLoop.sh
-	./tests/fuzzLoop.sh
-	```
+
+  ```sh
+  chmod +x tests/fuzzLoop.sh
+  ./tests/fuzzLoop.sh
+  ```
 
 - Behavior: prints `seed <N>` for each iteration, builds to a temporary folder, runs the binary, and
   repeats with the next seed until you stop it (Ctrl-C). Temporary files are cleaned up
   automatically.
 
 - Reproduce a failing case: take the printed seed `N` and run:
-	```sh
-	node tests/QuickHashGenTest.node.js N > /tmp/test.cpp
-	g++ -o /tmp/test /tmp/test.cpp
-	/tmp/test
-	```
+  ```sh
+  node tests/QuickHashGenTest.node.js N > /tmp/test.cpp
+  g++ -o /tmp/test /tmp/test.cpp
+  /tmp/test
+  ```
 
 Note: `tests/QuickHashGenTest.node.js` seeds the generator deterministically from `N`, so the same
 seed reproduces the same dataset and result.

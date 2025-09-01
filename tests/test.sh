@@ -10,7 +10,7 @@ node "$DIR/cli.test.js"
 node "$DIR/search.test.js"
 node "$DIR/helpers.test.js"
 
-node "$ROOT/QuickHashGenCLI.node.js" --seed 1 --tests 100 "$DIR/input1.txt" > "$DIR/out1.c"
+node "$ROOT/QuickHashGenCLI.node.js" --seed 1 --tests 1000 "$DIR/input1.txt" > "$DIR/out1.c"
 # help flag should print usage and succeed
 node "$ROOT/QuickHashGenCLI.node.js" --help >"$DIR/help.log" 2>&1
 grep -q 'Usage:' "$DIR/help.log"
@@ -36,8 +36,8 @@ grep -q 'Usage:' "$DIR/err.log"
 rm "$DIR/err.log"
 
 # verify option handling
-node "$ROOT/QuickHashGenCLI.node.js" --seed 1 --tests 100 --force-eval --eval-test "$DIR/input1.txt" > "$DIR/out1_eval.c"
-node "$ROOT/QuickHashGenCLI.node.js" --seed 123 --tests 100 "$DIR/input2.txt" > "$DIR/out2.c"
+node "$ROOT/QuickHashGenCLI.node.js" --seed 1 --tests 1000 --force-eval --eval-test "$DIR/input1.txt" > "$DIR/out1_eval.c"
+node "$ROOT/QuickHashGenCLI.node.js" --seed 123 --tests 1000 "$DIR/input2.txt" > "$DIR/out2.c"
 node "$ROOT/QuickHashGenCLI.node.js" --seed 10 --tests 50000 "$DIR/input3.txt" > "$DIR/out3.c"
 node "$ROOT/QuickHashGenCLI.node.js" --seed 7 --tests 1000 "$DIR/input4.txt" > "$DIR/out4.c"
 node "$ROOT/QuickHashGenCLI.node.js" --seed 11 --tests 2000 "$DIR/input5.txt" > "$DIR/out5.c"

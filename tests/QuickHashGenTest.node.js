@@ -78,7 +78,7 @@ var theHashMaker = new QuickHashGen(strings, minSize, maxSize, true, true, true,
 var found = null;
 while (found === null) {
 	var complexity = theHashMaker.randomInt(MAX_COMPLEXITY) + 1;
-	found = theHashMaker.search(complexity, 100000);
+	found = theHashMaker.search(complexity, 100000, Infinity);
 }
 
 if (found !== null) {

@@ -136,10 +136,11 @@ if (opts.bench) {
 		let bestBench = null;
 		const start = process.hrtime.bigint();
 		while (qhBench.getTestedCount() < opts.tests) {
-			let complexity = complexityRng.nextInt(bestBench === null ? 32 : bestBench.complexity) + 1;
+			let complexity = complexityRng.nextInt(bestBench === null ? 32 : bestBench.complexity + 2) + 1;
 			let remaining = opts.tests - qhBench.getTestedCount();
 			let iters = Math.max(1, Math.min(remaining, Math.floor(200 / strings.length)));
-			let found = qhBench.search(complexity, iters);
+			let maxCost = bestBench === null ? Infinity : bestBench.cost;
+			let found = qhBench.search(complexity, iters, maxCost);
 			if (
 				found &&
 				(bestBench === null ||
