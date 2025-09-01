@@ -594,7 +594,8 @@ function QuickHashGen(
 	var counter = 0;
 	var collisions = [];
 
-	this.search = function (complexity, iterations) {
+	this.search = function (complexity, iterations, maxCost) {
+		maxCost = typeof maxCost === "number" ? maxCost : Infinity;
 		if (DEBUG) {
 			assert(0 < complexity, "0 < complexity");
 			assert(
@@ -612,6 +613,8 @@ function QuickHashGen(
 
 		var stringsCount = strings.length;
 		var hashes = new Array(stringsCount);
+		var minTableCost = 0;
+		for (var t = minTableSize; t > 1; t >>= 1) minTableCost += 16;
 
 		var rnd = prng;
 		for (var i = 0; i < iterations; ++i) {
@@ -630,6 +633,7 @@ function QuickHashGen(
 				if (complexity <= 4) {
 					tried[complexity][expr] = true;
 				}
+				if (exprCost + minTableCost > maxCost) continue;
 				var func;
 				if (useEvalEngine) {
 					try {
@@ -646,8 +650,9 @@ function QuickHashGen(
 				}
 
 				var tableSize = minTableSize;
+				var tableCost = minTableCost;
 				var found = false;
-				while (!found && tableSize <= maxTableSize) {
+				while (!found && tableSize <= maxTableSize && exprCost + tableCost <= maxCost) {
 					var j = 0;
 					var hash;
 					while (j < stringsCount && collisions[(hash = hashes[j] & (tableSize - 1))] !== counter) {
@@ -659,10 +664,11 @@ function QuickHashGen(
 						found = true;
 					} else {
 						tableSize <<= 1;
+						tableCost += 16;
 					}
 				}
 
-				if (found) {
+				if (found && exprCost + tableCost <= maxCost) {
 					var table = new Array(tableSize);
 					for (var j = 0; j < tableSize; ++j) table[j] = -1;
 					for (var j = 0; j < stringsCount; ++j) {
@@ -670,8 +676,6 @@ function QuickHashGen(
 						if (DEBUG) assert(table[hash] === -1, "table[hash] === -1");
 						table[hash] = j;
 					}
-					var tableCost = 0;
-					for (var t = tableSize; t > 1; t >>= 1) tableCost += 16;
 					var result = {
 						complexity: complexity,
 						cost: exprCost + tableCost,
@@ -906,13 +910,14 @@ function findMatchingSquare(code, openIndex) {
 }
 
 function scheduleStep(qh, best, rng, stringsLength, remainingTests) {
-	var maxC = best === null ? 32 : best.complexity;
+	var maxC = best === null ? 32 : best.complexity + 2;
 	var complexity = rng.nextInt(maxC) + 1;
 	var iters = iterationsFor(stringsLength, 200);
 	if (typeof remainingTests === "number") {
 		iters = Math.min(iters, Math.max(1, remainingTests | 0));
 	}
-	return qh.search(complexity, iters);
+	var maxCost = best === null ? Infinity : best.cost;
+	return qh.search(complexity, iters, maxCost);
 }
 
 // Update or generate C code using a found solution. If the provided code

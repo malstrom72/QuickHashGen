@@ -21,10 +21,11 @@ function findSolution(zeroTerminated) {
 	let best = null;
 	const tests = 1000;
 	while (qh.getTestedCount() < tests) {
-		const complexity = complexityRng.nextInt(best === null ? 32 : best.complexity) + 1;
+		const complexity = complexityRng.nextInt(best === null ? 32 : best.complexity + 2) + 1;
 		const remaining = tests - qh.getTestedCount();
 		const iters = Math.max(1, Math.min(remaining, Math.floor(200 / strings.length)));
-		const found = qh.search(complexity, iters);
+		const maxCost = best === null ? Infinity : best.cost;
+		const found = qh.search(complexity, iters, maxCost);
 		if (found && (best === null || found.cost < best.cost || (found.cost === best.cost && found.table.length < best.table.length))) {
 			best = found;
 			if (best.complexity === 1) break;
