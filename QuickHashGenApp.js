@@ -49,6 +49,11 @@ try {
 			elements.testStatus.style.display = "none";
 			elements.testStatus.textContent = "";
 		}
+		// Hide the output box (legend + index table) in non-debug mode
+		if (elements.hashes) {
+			elements.hashes.style.display = "none";
+			elements.hashes.textContent = "";
+		}
 	}
 } catch (err) {
 	console.error("Failed to apply DEBUG gating to controls", err);
@@ -129,8 +134,9 @@ function toggleRun() {
 window.toggleRun = toggleRun; // expose for inline onclick
 
 function copyHashes() {
+	// Copy the top edit box (C code solution), not the output legend/table
 	try {
-		var text = elements.hashes && elements.hashes.textContent ? elements.hashes.textContent : "";
+		var text = elements.editor && typeof elements.editor.value === "string" ? elements.editor.value : "";
 		if (navigator.clipboard && navigator.clipboard.writeText) {
 			navigator.clipboard.writeText(text);
 		} else {
@@ -301,16 +307,20 @@ function updateOutput() {
 		} catch (err) {
 			console.error("Failed to apply best solution", err);
 		}
-		var tableSize = best.table.length;
-		var header = "Legend: idx = hash & (tableSize-1) | tableSize=" + tableSize + "\n" + "<string> -> idx=<index> (hash=<raw>)\n";
-		var lines = [header];
-		for (var i = 0; i < strings.length; ++i) {
-			var raw = best.hashes[i];
-			var idx = raw & (tableSize - 1);
-			lines.push(escapeCString(strings[i]) + " -> idx=" + idx + " (hash=" + raw + ")");
+		if (DEBUG) {
+			var tableSize = best.table.length;
+			var header = "Legend: idx = hash & (tableSize-1) | tableSize=" + tableSize + "\n" + "<string> -> idx=<index> (hash=<raw>)\n";
+			var lines = [header];
+			for (var i = 0; i < strings.length; ++i) {
+				var raw = best.hashes[i];
+				var idx = raw & (tableSize - 1);
+				lines.push(escapeCString(strings[i]) + " -> idx=" + idx + " (hash=" + raw + ")");
+			}
+			elements.hashes.textContent = lines.join("\n");
 		}
-		elements.hashes.textContent = lines.join("\n");
-	} else elements.hashes.textContent = "";
+	} else {
+		elements.hashes.textContent = "";
+	}
 	updateModeLabel();
 }
 function intervalFunction() {
@@ -442,7 +452,7 @@ function runSelfTests() {
 	});
 	T("rewrite zero-term off/on", function () {
 		var code0 =
-			"static int f(int n, const char* s /* string (zero terminated) */) {\n\tconst unsigned char* p = (const unsigned char*) s;\n\tassert(s[n] == '\\0');\n\tif (n < 2) return -1;\n\tint stringIndex = 0;\n\treturn (stringIndex >= 0 && strcmp(s, STRINGS[stringIndex]) == 0) ? stringIndex : -1;\n}";
+			"static int f(int n, const char* s /* string (zero terminated) */) {\n\tconst unsigned char* p = (const unsigned char*) s;\n\tassert(s[n] == '\\0');\n\tif (n < 2) return -1;\n\tint stringIndex[...]";
 		var off = rewriteZeroTerminationMode(code0, false);
 		if (off.indexOf("zero termination not required") < 0) throw new Error("sig not switched");
 		if (off.indexOf("strncmp(") < 0) throw new Error("return not switched");
