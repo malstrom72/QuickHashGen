@@ -311,6 +311,9 @@ code. The app parses the contents, updates the `STRINGS` array and length guards
 the hash when you press **Start**. Editing the text or toggling any option automatically pauses the
 search so you can resume with new parameters.
 
+You can also try it live without cloning the repo:
+[QuickHashGen](https://htmlpreview.github.io/?https://github.com/malstrom72/QuickHashGen/blob/main/QuickHashGen.html)
+
 Checkboxes mirror the CLI flags, letting you disallow multiplications, omit the length variable,
 toggle zero-termination handling, and (when in debug mode) optionally run an evaluation check or
 switch to the `eval` engine.
